@@ -1,5 +1,6 @@
 #include "ImGuiManager.h"
 #include "../backends/ImGuiFileDialog.h"
+#include "SystemPaths.h" 
 
 // ImGui 매니저 초기화 함수
 void ImGuiManager::Init()
@@ -39,17 +40,39 @@ void ImGuiManager::Init()
     // 스타일 설정
     SetupStyle();
 
-
     // 파일 다이얼로그 내 Places 그룹 생성 및 설정
     ImGuiFileDialog::Instance()->AddPlacesGroup(placesBookmarksGroupName, 0.5f, true, true);
 
-    auto places_ptr = ImGuiFileDialog::Instance()->GetPlacesGroupPtr("CustomPlaces");
+    // 사용자 정의 경로 그룹 생성
+    auto places_ptr = ImGuiFileDialog::Instance()->GetPlacesGroupPtr(placesBookmarksGroupName);
     if (places_ptr != nullptr)
     {
-        // 자주 접근할 폴더 바로가기 추가
-        places_ptr->AddPlace("엑셀 데이터", "C:\\Users\\Dev\\Downloads", true, IGFD::FileStyle(ImVec4(0.1f, 0.8f, 0.2f, 1.0f)));
+        // 시스템 경로 가져오기
+        std::string downloadsPath = SystemPaths::GetDownloads();
+        std::string documentsPath = SystemPaths::GetDocuments();
+        std::string desktopPath = SystemPaths::GetDesktop();
 
-        // 경로 구분선 추가
+        // 자주 접근할 폴더 바로가기 추가 (자동 경로 사용)
+        if (!desktopPath.empty())
+        {
+            std::string placeName = std::string(ICON_FA_PERSON_THROUGH_WINDOW) + "  바탕화면";
+            places_ptr->AddPlace(placeName.c_str(), desktopPath, true, IGFD::FileStyle(ImVec4(1.0f, 0.6f, 0.2f, 1.0f)));
+        }
+
+        if (!downloadsPath.empty())
+        {
+            std::string placeName = std::string(ICON_FA_DOWNLOAD) + "   다운로드";
+            places_ptr->AddPlace(placeName.c_str(), downloadsPath, true, IGFD::FileStyle(ImVec4(0.1f, 0.8f, 0.2f, 1.0f)));
+        }
+
+        if (!documentsPath.empty())
+        {
+            std::string placeName = std::string(ICON_FA_NEWSPAPER) + "   내 문서";
+            places_ptr->AddPlace(placeName.c_str(), documentsPath, true, IGFD::FileStyle(ImVec4(0.2f, 0.7f, 1.0f, 1.0f)));
+        }
+
+
+        // 구분선 추가
         places_ptr->AddPlaceSeparator(2.0f);
     }
 

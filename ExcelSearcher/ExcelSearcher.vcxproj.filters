@@ -24,6 +24,7 @@
     <ClInclude Include="IconsFontAwesome6.h">
       <Filter>ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="SystemPaths.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -41,6 +42,7 @@
     <ClCompile Include="..\backends\ImGuiFileDialog.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="SystemPaths.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
