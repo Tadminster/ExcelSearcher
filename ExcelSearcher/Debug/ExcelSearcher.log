@@ -153,9 +153,9 @@ C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
 C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(51,75): warning C4244: '인수': 'float'에서 'const size_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(403,99): warning C4244: '인수': 'uint64_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(473,43): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(512,1): warning C4702: 접근할 수 없는 코드입니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(408,99): warning C4244: '인수': 'uint64_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(478,43): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(517,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(94,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(95,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(97,1): warning C4702: 접근할 수 없는 코드입니다.

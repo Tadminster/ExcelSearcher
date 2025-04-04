@@ -245,18 +245,17 @@ void ImGuiManager::Update()
             ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
             ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
 
-            // ✅ 표 시작 (4열)
+            // 표 시작 (4열)
             if (ImGui::BeginTable("ResultTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
             {
-                // ✅ 헤더 행
-// 열 비율 설정
+                // 헤더 행
                 ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch, 3.0f);  // 3/10
                 ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthStretch, 1.5f);  // 1.5/10
                 ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthStretch, 1.5f);  // 1.5/10
                 ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch, 4.0f);  // 4/10
                 ImGui::TableHeadersRow();
 
-                // ✅ 결과 반복 출력
+                // 결과 반복 출력
                 for (const auto& result : searchResults)
                 {
                     ImGui::TableNextRow();
@@ -322,61 +321,84 @@ void ImGuiManager::SetupStyle()
     }
 }
 
+// ==========================================================================
+// 선택된 엑셀 파일들에서 특정 키워드를 검색하는 메인 처리 함수
+// ==========================================================================
 void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
 {
+    // 검색어가 없으면 리턴
     if (keyword.empty())
         return;
 
+    // 기존 검색 결과 초기화
     searchResults.clear();
+
+    // 선택된 모든 파일 반복
     std::wstring wKeyword = SystemUtils::UTF8ToWString(keyword);
     std::wcout << L"검색어: " << wKeyword << std::endl;
 
     for (const auto& filePair : selectedFiles)
     {
+        // 파일 이름과 경로 가져오기
         const std::string& fileName = filePair.first;
         const std::string& filePath = filePair.second;
 
+        // 파일 이름과 경로 출력
         std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
         std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
-
         std::wcout << L"===========================================" << std::endl;
         std::wcout << L"파일 이름: " << wfileName << std::endl;
         std::wcout << L"전체 경로: " << wfilePath << std::endl;
 
+        // 엑셀파일을 임시 디렉토리에 복사
         std::string safePath = CopyExcelFile(filePath);
 
         try
         {
             OpenXLSX::XLDocument doc;
+
+            // 엑셀 파일 열기
             doc.open(safePath);
 
+            // 시트 개수 출력
             int sheetcnt = doc.workbook().sheetCount();
             std::wcout << L"시트 개수: " << sheetcnt << std::endl;
 
+            // 엑셀 문서 내의 모든 시트 반복
             for (const auto& sheetName : doc.workbook().worksheetNames())
             {
+                // 시트 이름 출력
                 std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
                 std::wcout << L"시트 이름: " << wSheetName;
 
+                // 시트 객체 생성
                 OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
-                // rowCount, columnCount() 출력
 
-                // 시트의 행과 열 개수 출력
+                // 시트의 행과 열의 개수 출력
                 std::wcout << L" (" << sheet.rowCount() << L" * " << sheet.columnCount() << L")" << std::endl;
 
                 try
                 {
-
+                    // 비어 있는 시트는 건너뜀
                     if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
                     {
                         std::wcout << L"시트가 비어 있어 건너뜁니다: " << wSheetName << std::endl;
                         break;
                     }
 
+                    // 셀의 개수가 비정상적으로 많으면 예외 발생 > fallback으로 대체
+                    if (sheet.rowCount() > 1000 || sheet.columnCount() > 1000)
+                    {
+                        std::wcout << L"셀의 개수가 비정상적으로 많습니다." << std::endl;
+                        throw std::runtime_error("too large for range");
+                    }
+
+                    // 시트 전체 범위를 가져오기
                     OpenXLSX::XLCellRange range = sheet.range();
                     auto first = range.topLeft();
                     auto last = range.bottomRight();
 
+                    // 셀 순회
                     for (uint64_t row = first.row(); row <= last.row(); ++row)
                     {
                         for (uint16_t col = first.column(); col <= last.column(); ++col)
@@ -387,25 +409,32 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                 }
                 catch (const std::exception& ex)
                 {
-                    std::wcout << L"⚠️ range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
-                    std::wcout << L"→ 반복문 fallback (20x30 셀, 연속 100개 비면 스킵)" << std::endl;
+                    // 예외 발생 시 알림
+                    std::wcout << L"range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
 
+                    // fallback 처리
+                    // 20 * 30 셀을 순회하며 검색, 100개 연속 빈 셀 탐지 시 스킵
                     const uint64_t maxRows = 20;
                     const uint16_t maxCols = 30;
                     const int maxConsecutiveEmptyCells = 100;
 
+                    // 빈 셀 카운트를 저장할 변수
                     int emptyCellStreak = 0;
 
+                    // 셀 순회
                     for (uint64_t col = 1; col <= maxCols; ++col)
                     {
                         for (uint16_t row = 1; row <= maxRows; ++row)
                         {
                             bool hasValue = ProcessCell(sheet, fileName, sheetName, keyword, row, col);
 
+                            // 빈 셀이면
                             if (!hasValue)
                             {
+                                // 빈 셀 카운트 증가
                                 emptyCellStreak++;
 
+                                // 연속 빈 셀 카운트가 최대값에 도달하면 스킵
                                 if (emptyCellStreak >= maxConsecutiveEmptyCells)
                                 {
                                     std::wcout << L"📭 연속으로 "
@@ -416,6 +445,7 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                             }
                             else
                             {
+                                // 유효셀을 찾았으면 빈 셀 카운트 초기화
                                 emptyCellStreak = 0;
                             }
                         }
@@ -426,10 +456,12 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                 }
             }
 
+            // 엑셀 문서 닫기
             doc.close();
         }
         catch (const std::exception& ex)
         {
+            // 예외 발생 시 알림
             std::wcout << L"\n파일: " << wfilePath << std::endl;
             std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
             std::wcout << L"사유: " << wErr << std::endl;
@@ -437,31 +469,9 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
     }
 }
 
-
-
-
-std::string ImGuiManager::CopyExcelFile(const std::string& originalPath)
-{
-    std::wstring wOriginal = SystemUtils::UTF8ToWString(originalPath);
-
-    wchar_t tempDir[MAX_PATH];
-    GetTempPathW(MAX_PATH, tempDir);
-
-    // 임시 파일명 생성 (고유성 부여 가능)
-    std::wstring wTempPath = std::wstring(tempDir) + L"temp_excel.xlsx";
-
-    // 복사
-    if (!CopyFileW(wOriginal.c_str(), wTempPath.c_str(), FALSE))
-    {
-        // 복사 실패 시 에러 메시지 출력
-        std::wcerr << L"파일 복사 실패: " << wOriginal << std::endl;
-        std::wcerr << L"사유: " << GetLastError() << std::endl;
-
-    }
-
-    return SystemUtils::WStringToUTF8(wTempPath);
-}
-
+// ==========================================================================
+// 특정 시트에서 한 개의 셀(row, col)을 검사하고, 유효하면 keyword 포함 여부 확인
+// ==========================================================================
 bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     const std::string& fileName,
     const std::string& sheetName,
@@ -471,29 +481,39 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     try
     {
         OpenXLSX::XLCellReference cellRef(row, col);
+        // 셀 참조 가져오기
         auto cell = sheet.cell(cellRef);
 
+        // 셀 비었으면 false 리턴
         if (cell.empty())
             return false;
 
+        // 셀 값 가져오기
         OpenXLSX::XLCellValue value = cell.value();
 
+        // 셀 value가 비어있으면 false 리턴
         if (value.type() == OpenXLSX::XLValueType::Empty)
             return false;
 
         std::string cellText;
-
+        // 셀 값이 문자열이면
         if (value.type() == OpenXLSX::XLValueType::String)
-            cellText = value.get<std::string>();
-        else
         {
+            // 안정적으로 문자열 가져옴
+            cellText = value.get<std::string>();
+        }
+        else // 그 외의 type은
+        {
+            // 문자열로 변환하여 저장
             std::ostringstream oss;
             oss << value;
             cellText = oss.str();
         }
 
+        // 키워드 포함 여부 확인
         if (cellText.find(keyword) != std::string::npos)
         {
+            // 검색 결과 저장
             ExcelSearchResult result;
             result.fileName = fileName;
             result.sheetName = sheetName;
@@ -510,4 +530,32 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     }
 
     return false;
+}
+
+
+// ==========================================================================
+// 원본 엑셀 파일을 임시 디렉토리로 복사하고 그 경로를 반환
+// OpenXLSX가 직접 한글 경로를 지원하지 않기 때문에 복사 방식 사용
+// ==========================================================================
+std::string ImGuiManager::CopyExcelFile(const std::string& originalPath)
+{
+    std::wstring wOriginal = SystemUtils::UTF8ToWString(originalPath);
+
+    // 임시 디렉토리 경로 가져오기
+    wchar_t tempDir[MAX_PATH];
+    GetTempPathW(MAX_PATH, tempDir);
+
+    // 임시 파일명 생성
+    std::wstring wTempPath = std::wstring(tempDir) + L"temp_excel.xlsx";
+
+    // 파일 복사 시도
+    if (!CopyFileW(wOriginal.c_str(), wTempPath.c_str(), FALSE))
+    {
+        //실패 시 에러 메시지 출력
+        std::wcerr << L"파일 복사 실패: " << wOriginal << std::endl;
+        std::wcerr << L"사유: " << GetLastError() << std::endl;
+
+    }
+
+    return SystemUtils::WStringToUTF8(wTempPath);
 }
