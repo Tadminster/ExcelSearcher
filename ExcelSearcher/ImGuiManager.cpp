@@ -3,7 +3,7 @@
 #include <ImGuiFileDialog.h>
 #include <OpenXLSX.hpp>
 
-#include "SystemPaths.h"
+#include "SystemUtils.h"
 #include <locale>
 #include <sstream>
 
@@ -55,9 +55,9 @@ void ImGuiManager::Init()
     if (places_ptr != nullptr)
     {
         // 시스템 경로 가져오기
-        std::string downloadsPath = SystemPaths::GetDownloads();
-        std::string documentsPath = SystemPaths::GetDocuments();
-        std::string desktopPath = SystemPaths::GetDesktop();
+        std::string downloadsPath = SystemUtils::GetDownloads();
+        std::string documentsPath = SystemUtils::GetDocuments();
+        std::string desktopPath = SystemUtils::GetDesktop();
 
         // 자주 접근할 폴더 바로가기 추가 (자동 경로 사용)
         if (!desktopPath.empty())
@@ -309,7 +309,8 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
     searchResults.clear();
 
     // 검색어 출력
-    std::wcout << L"검색어: " << std::wstring(keyword.begin(), keyword.end()) << std::endl;
+    std::wstring wKeyword = SystemUtils::UTF8ToWString(keyword);
+    std::wcout << L"검색어: " << wKeyword << std::endl;
 
     // 선택된 모든 파일을 순회
     for (const auto& filePair : selectedFiles)
@@ -317,9 +318,13 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
         const std::string& fileName = filePair.first;   // 파일 이름
         const std::string& filePath = filePair.second;  // 전체 경로
 
+        std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
+        std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
+
         // 파일 경로와 이름 출력
-        std::wcout << L"파일 이름: " << std::wstring(fileName.begin(), fileName.end()) << std::endl;
-        std::wcout << L"전체 경로: " << std::wstring(filePath.begin(), filePath.end()) << std::endl;
+        std::wcout << L"===========================================" << std::endl;
+        std::wcout << L"파일 이름: " << wfileName << std::endl;
+        std::wcout << L"전체 경로: " << wfilePath << std::endl;
 
         try
         {
@@ -335,7 +340,8 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
             for (const auto& sheetName : doc.workbook().worksheetNames())
             {
                 // 시트 이름 출력
-                std::wcout << L"시트 이름: " << std::wstring(sheetName.begin(), sheetName.end()) << std::endl;
+                std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
+                std::wcout << L"시트 이름: " << wSheetName << std::endl;
 
                 // 해당 시트를 가져옴
                 OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
@@ -418,7 +424,8 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
         catch (const std::exception& ex)
         {
             // 파일 처리 중 에러 발생 시 콘솔에 출력
-            std::wcout << L"파일 처리 오류: " << std::wstring(filePath.begin(), filePath.end()) << std::endl;
+            std::wcout << std::endl;
+            std::wcout << L"파일: " << wfilePath << std::endl;
             std::wcout << L"사유: " << std::wstring(ex.what(), ex.what() + strlen(ex.what())) << std::endl;
         }
     }

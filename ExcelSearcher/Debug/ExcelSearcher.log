@@ -5,122 +5,137 @@ C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(87,53): warning
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: 'return': 'size_t'에서 'int32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb1 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb1 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb2 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb2 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb4 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb4 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xb9 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xb9 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xbb 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xbb 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xbd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xbd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xbe 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xbe 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xc2 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xc2 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xc5 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xc5 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xc7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xc7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xc8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xc8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xc9 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xc9 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xca 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xca 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xcb 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xcb 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0xcc 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0xcc 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x11b 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x11b 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x11c 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x11c 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x11e 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x11e 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x120 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x120 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x121 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x121 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x122 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x122 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x123 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x123 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x125 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x125 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x126 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x126 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x129 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x129 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x12a 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x12a 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x12d 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x12d 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x131 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x131 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x133 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x133 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x134 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x134 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1cc 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1b6 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1cd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1b7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1d4 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1b8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1d5 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1bb 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1d7 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1bd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.h(1,1): warning C4828: 파일에 0x1d8 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1be 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1c2 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1c4 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1c5 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1c9 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1cd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
 C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(51,75): warning C4244: '인수': 'float'에서 'const size_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(356,59): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(361,59): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(94,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(95,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(97,1): warning C4702: 접근할 수 없는 코드입니다.

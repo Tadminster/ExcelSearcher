@@ -31,4 +31,4 @@ C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\sources\XLXmlParser.cpp;C:\Git\ExcelSea
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp;C:\Git\ExcelSearcher\ExcelSearcher\Debug\XLZipArchive.obj
 C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp;C:\Git\ExcelSearcher\ExcelSearcher\Debug\ImGuiManager.obj
 C:\Git\ExcelSearcher\ExcelSearcher\main.cpp;C:\Git\ExcelSearcher\ExcelSearcher\Debug\main.obj
-C:\Git\ExcelSearcher\ExcelSearcher\SystemPaths.cpp;C:\Git\ExcelSearcher\ExcelSearcher\Debug\SystemPaths.obj
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.cpp;C:\Git\ExcelSearcher\ExcelSearcher\Debug\SystemUtils.obj

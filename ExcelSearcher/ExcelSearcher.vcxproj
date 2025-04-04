@@ -159,7 +159,7 @@
     <ClInclude Include="ExcelSearchResult.h" />
     <ClInclude Include="IconsFontAwesome6.h" />
     <ClInclude Include="ImGuiManager.h" />
-    <ClInclude Include="SystemPaths.h" />
+    <ClInclude Include="SystemUtils.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
@@ -196,7 +196,7 @@
     <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp" />
     <ClCompile Include="ImGuiManager.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="SystemPaths.cpp" />
+    <ClCompile Include="SystemUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
