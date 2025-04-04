@@ -22,6 +22,16 @@ std::wstring SystemUtils::UTF8ToWString(const std::string& str)
     return wstr;
 }
 
+bool SystemUtils::IsAscii(const std::string& str)
+{
+    for (unsigned char ch : str)
+    {
+        if (ch > 127)
+            return false; // 비 ASCII 문자 (한글 등)
+    }
+    return true;
+}
+
 std::string SystemUtils::GetKnownFolder(REFKNOWNFOLDERID folderId)
 {
     PWSTR path = nullptr;

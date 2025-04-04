@@ -9,6 +9,8 @@
 #include <map>
 #include <vector>
 
+#include <OpenXLSX.hpp>
+
 #include "Types.h"
 #include "ExcelSearchResult.h"
 
@@ -34,6 +36,8 @@ public:
 private:
     void SetupStyle();  // 스타일 설정 함수
     void SearchInSelectedFiles(const std::string& keyword);  // 선택된 파일들에서 검색
+    std::string CopyExcelFile(const std::string& originalPath); // 엑셀 파일 복사
+    bool ProcessCell(OpenXLSX::XLWorksheet& sheet, const std::string& fileName, const std::string& sheetName, const std::string& keyword, uint64_t row, uint16_t col);
 
 public:
     const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일 {.*}" };  // 파일 다이얼로그 필터

@@ -241,16 +241,40 @@ void ImGuiManager::Update()
             ImGui::Separator();
             ImGui::Text(u8"검색 결과: %d개 일치", searchResults.size());
 
-            ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 12);
+            // 표 크기 지정
+            ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
             ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
 
-            for (const auto& result : searchResults)
+            // ✅ 표 시작 (4열)
+            if (ImGui::BeginTable("ResultTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
             {
-                ImGui::Text(u8"파일: %s", result.fileName.c_str());
-                ImGui::Text(u8"시트: %s", result.sheetName.c_str());
-                ImGui::Text(u8"셀 위치: %s", result.cellAddress.c_str());
-                ImGui::Text(u8"내용: %s", result.cellValue.c_str());
-                ImGui::Separator();
+                // ✅ 헤더 행
+// 열 비율 설정
+                ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch, 3.0f);  // 3/10
+                ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthStretch, 1.5f);  // 1.5/10
+                ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthStretch, 1.5f);  // 1.5/10
+                ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch, 4.0f);  // 4/10
+                ImGui::TableHeadersRow();
+
+                // ✅ 결과 반복 출력
+                for (const auto& result : searchResults)
+                {
+                    ImGui::TableNextRow();
+
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("%s", result.fileName.c_str());
+
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%s", result.sheetName.c_str());
+
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("%s", result.cellAddress.c_str());
+
+                    ImGui::TableSetColumnIndex(3);
+                    ImGui::TextWrapped("%s", result.cellValue.c_str());
+                }
+
+                ImGui::EndTable();
             }
 
             ImGui::EndChild();
@@ -298,135 +322,192 @@ void ImGuiManager::SetupStyle()
     }
 }
 
-// 선택된 파일들에서 keyword를 검색하는 함수
 void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
 {
-    // 검색어가 비어 있다면 아무 작업도 하지 않음
     if (keyword.empty())
         return;
 
-    // 이전 검색 결과를 초기화
     searchResults.clear();
-
-    // 검색어 출력
     std::wstring wKeyword = SystemUtils::UTF8ToWString(keyword);
     std::wcout << L"검색어: " << wKeyword << std::endl;
 
-    // 선택된 모든 파일을 순회
     for (const auto& filePair : selectedFiles)
     {
-        const std::string& fileName = filePair.first;   // 파일 이름
-        const std::string& filePath = filePair.second;  // 전체 경로
+        const std::string& fileName = filePair.first;
+        const std::string& filePath = filePair.second;
 
         std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
         std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
 
-        // 파일 경로와 이름 출력
         std::wcout << L"===========================================" << std::endl;
         std::wcout << L"파일 이름: " << wfileName << std::endl;
         std::wcout << L"전체 경로: " << wfilePath << std::endl;
 
+        std::string safePath = CopyExcelFile(filePath);
+
         try
         {
-            // OpenXLSX를 사용하여 엑셀 파일 열기
             OpenXLSX::XLDocument doc;
-            doc.open(filePath);
+            doc.open(safePath);
 
-            // 시트 개수 출력
             int sheetcnt = doc.workbook().sheetCount();
             std::wcout << L"시트 개수: " << sheetcnt << std::endl;
 
-            // 워크북에 존재하는 모든 시트를 순회
             for (const auto& sheetName : doc.workbook().worksheetNames())
             {
-                // 시트 이름 출력
                 std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
-                std::wcout << L"시트 이름: " << wSheetName << std::endl;
+                std::wcout << L"시트 이름: " << wSheetName;
 
-                // 해당 시트를 가져옴
                 OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
+                // rowCount, columnCount() 출력
 
-                // 시트 전체 범위를 가져옴
-                OpenXLSX::XLCellRange range = sheet.range();
-                OpenXLSX::XLCellReference firstCell = range.topLeft();      // 시작 셀 (예: A1)
-                OpenXLSX::XLCellReference lastCell = range.bottomRight();   // 끝 셀 (예: E20)
+                // 시트의 행과 열 개수 출력
+                std::wcout << L" (" << sheet.rowCount() << L" * " << sheet.columnCount() << L")" << std::endl;
 
-                // 모든 행(row)을 순회
-                for (uint64_t row = firstCell.row(); row <= lastCell.row(); ++row)
+                try
                 {
-                    // 모든 열(column)을 순회
-                    for (uint16_t col = firstCell.column(); col <= lastCell.column(); ++col)
+
+                    if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
                     {
-                        // 셀 참조를 생성 (예: A1, B2 등)
-                        OpenXLSX::XLCellReference cellRef(row, col);
+                        std::wcout << L"시트가 비어 있어 건너뜁니다: " << wSheetName << std::endl;
+                        break;
+                    }
 
-                        // 해당 셀을 가져옴
-                        auto cell = sheet.cell(cellRef);
+                    OpenXLSX::XLCellRange range = sheet.range();
+                    auto first = range.topLeft();
+                    auto last = range.bottomRight();
 
-                        // 셀에 값이 있는 경우
-                        if (!cell.empty())
+                    for (uint64_t row = first.row(); row <= last.row(); ++row)
+                    {
+                        for (uint16_t col = first.column(); col <= last.column(); ++col)
                         {
-                            // 셀의 값을 가져옴
-                            OpenXLSX::XLCellValue value = cell.value();
-
-                            // 셀의 값 타입에 따라 처리
-                            switch (value.type())
-                            {
-                                // 셀의 값이 문자열인 경우
-                            case OpenXLSX::XLValueType::String:
-                            {
-                                std::string cellText = value.get<std::string>();
-                                // 검색어 포함 검사
-                                if (cellText.find(keyword) != std::string::npos)
-                                {
-                                    ExcelSearchResult result;
-                                    result.fileName = fileName;
-                                    result.sheetName = sheetName;
-                                    result.cellAddress = cellRef.address();
-                                    result.cellValue = cellText;
-                                    searchResults.push_back(result);
-                                }
-                            }
-                            break;
-
-                            // 셀의 값이 숫자, 부동소수점, 불리언인 경우
-                            case OpenXLSX::XLValueType::Integer:
-                            case OpenXLSX::XLValueType::Float:
-                            case OpenXLSX::XLValueType::Boolean:
-                            {
-                                std::ostringstream oss;
-                                oss << value;  // OpenXLSX는 ostream 연산자 << 를 오버로드했음
-
-                                std::string cellText = oss.str();
-                                if (cellText.find(keyword) != std::string::npos)
-                                {
-                                    ExcelSearchResult result;
-                                    result.fileName = fileName;
-                                    result.sheetName = sheetName;
-                                    result.cellAddress = cellRef.address();
-                                    result.cellValue = cellText;
-                                    searchResults.push_back(result);
-                                }
-                            }
-                            case OpenXLSX::XLValueType::Empty:
-                                break;
-                            default:
-                                break;
-                            }
+                            ProcessCell(sheet, fileName, sheetName, keyword, row, col);
                         }
                     }
                 }
+                catch (const std::exception& ex)
+                {
+                    std::wcout << L"⚠️ range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
+                    std::wcout << L"→ 반복문 fallback (20x30 셀, 연속 100개 비면 스킵)" << std::endl;
+
+                    const uint64_t maxRows = 20;
+                    const uint16_t maxCols = 30;
+                    const int maxConsecutiveEmptyCells = 100;
+
+                    int emptyCellStreak = 0;
+
+                    for (uint64_t col = 1; col <= maxCols; ++col)
+                    {
+                        for (uint16_t row = 1; row <= maxRows; ++row)
+                        {
+                            bool hasValue = ProcessCell(sheet, fileName, sheetName, keyword, row, col);
+
+                            if (!hasValue)
+                            {
+                                emptyCellStreak++;
+
+                                if (emptyCellStreak >= maxConsecutiveEmptyCells)
+                                {
+                                    std::wcout << L"📭 연속으로 "
+                                        << maxConsecutiveEmptyCells
+                                        << L"개의 빈 셀이 탐지되어 시트를 스킵합니다." << std::endl;
+                                    goto SkipSheet;
+                                }
+                            }
+                            else
+                            {
+                                emptyCellStreak = 0;
+                            }
+                        }
+                    }
+
+                SkipSheet:
+                    continue;
+                }
             }
 
-            // 엑셀 문서 닫기
             doc.close();
         }
         catch (const std::exception& ex)
         {
-            // 파일 처리 중 에러 발생 시 콘솔에 출력
-            std::wcout << std::endl;
-            std::wcout << L"파일: " << wfilePath << std::endl;
-            std::wcout << L"사유: " << std::wstring(ex.what(), ex.what() + strlen(ex.what())) << std::endl;
+            std::wcout << L"\n파일: " << wfilePath << std::endl;
+            std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
+            std::wcout << L"사유: " << wErr << std::endl;
         }
     }
+}
+
+
+
+
+std::string ImGuiManager::CopyExcelFile(const std::string& originalPath)
+{
+    std::wstring wOriginal = SystemUtils::UTF8ToWString(originalPath);
+
+    wchar_t tempDir[MAX_PATH];
+    GetTempPathW(MAX_PATH, tempDir);
+
+    // 임시 파일명 생성 (고유성 부여 가능)
+    std::wstring wTempPath = std::wstring(tempDir) + L"temp_excel.xlsx";
+
+    // 복사
+    if (!CopyFileW(wOriginal.c_str(), wTempPath.c_str(), FALSE))
+    {
+        // 복사 실패 시 에러 메시지 출력
+        std::wcerr << L"파일 복사 실패: " << wOriginal << std::endl;
+        std::wcerr << L"사유: " << GetLastError() << std::endl;
+
+    }
+
+    return SystemUtils::WStringToUTF8(wTempPath);
+}
+
+bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
+    const std::string& fileName,
+    const std::string& sheetName,
+    const std::string& keyword,
+    uint64_t row, uint16_t col)
+{
+    try
+    {
+        OpenXLSX::XLCellReference cellRef(row, col);
+        auto cell = sheet.cell(cellRef);
+
+        if (cell.empty())
+            return false;
+
+        OpenXLSX::XLCellValue value = cell.value();
+
+        if (value.type() == OpenXLSX::XLValueType::Empty)
+            return false;
+
+        std::string cellText;
+
+        if (value.type() == OpenXLSX::XLValueType::String)
+            cellText = value.get<std::string>();
+        else
+        {
+            std::ostringstream oss;
+            oss << value;
+            cellText = oss.str();
+        }
+
+        if (cellText.find(keyword) != std::string::npos)
+        {
+            ExcelSearchResult result;
+            result.fileName = fileName;
+            result.sheetName = sheetName;
+            result.cellAddress = cellRef.address();
+            result.cellValue = cellText;
+            searchResults.push_back(result);
+        }
+
+        return true;  // 유효한 값 있는 셀
+    }
+    catch (...)
+    {
+        return false;  // 예외 발생 시 무시
+    }
+
+    return false;
 }

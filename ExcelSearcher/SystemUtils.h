@@ -19,5 +19,8 @@ public:
     // 문자열 변환 함수 (인코딩)
     static std::string WStringToUTF8(const std::wstring& wstr);
     static std::wstring UTF8ToWString(const std::string& str);
+
+    // ASCII 문자열 검사
+    static bool IsAscii(const std::string& str);
 private:
 };

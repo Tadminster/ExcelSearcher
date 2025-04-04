@@ -134,8 +134,28 @@ C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 
 C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x1cd 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
   (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
   
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x261 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x262 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x263 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x266 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x268 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
+C:\Git\ExcelSearcher\ExcelSearcher\SystemUtils.h(1,1): warning C4828: 파일에 0x26b 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'ImGuiManager.cpp'을(를) 컴파일하는 중)
+  
 C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(51,75): warning C4244: '인수': 'float'에서 'const size_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(361,59): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(403,99): warning C4244: '인수': 'uint64_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(473,43): warning C4244: '인수': 'uint64_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Git\ExcelSearcher\ExcelSearcher\ImGuiManager.cpp(512,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(94,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(95,1): warning C4702: 접근할 수 없는 코드입니다.
 C:\Git\ExcelSearcher\ThirdParty\OpenXLSX\headers\XLCellValue.hpp(97,1): warning C4702: 접근할 수 없는 코드입니다.
