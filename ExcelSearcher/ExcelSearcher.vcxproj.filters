@@ -7,6 +7,9 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{4134ec3c-3ad5-49ca-a298-9c919a77151b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="OpenXLSX">
+      <UniqueIdentifier>{c3011724-ecd6-49ef-8032-405242e2d546}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGuiManager.h">
@@ -24,7 +27,15 @@
     <ClInclude Include="IconsFontAwesome6.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="SystemPaths.h" />
+    <ClInclude Include="ExcelSearchResult.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\OpenXLSX\sources\XLUtilities.hpp">
+      <Filter>OpenXLSX</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemPaths.h">
+      <Filter>sources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -42,7 +53,93 @@
     <ClCompile Include="..\backends\ImGuiFileDialog.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="SystemPaths.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCell.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellIterator.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellRange.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellReference.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellValue.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLColor.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLColumn.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLComments.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLContentTypes.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDateTime.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDocument.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDrawing.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLFormula.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLMergeCells.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLProperties.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRelationships.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRow.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRowData.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLSharedStrings.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLSheet.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLStyles.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLTables.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLWorkbook.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlData.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlFile.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlParser.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\OpenXLSX\external\pugixml\pugixml.cpp">
+      <Filter>OpenXLSX</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemPaths.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />

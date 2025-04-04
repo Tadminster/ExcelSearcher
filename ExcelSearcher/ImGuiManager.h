@@ -6,10 +6,13 @@
 
 #include <d3d11.h>
 #include <string>
-#include <map> 
-#include "Types.h"
+#include <map>
+#include <vector>
 
-class ImGuiManager : public Singleton<ImGuiManager> ,public Scene
+#include "Types.h"
+#include "ExcelSearchResult.h"
+
+class ImGuiManager : public Singleton<ImGuiManager>, public Scene
 {
 public:
     void Init() override;
@@ -30,8 +33,11 @@ public:
 
 private:
     void SetupStyle();  // 스타일 설정 함수
+    void SearchInSelectedFiles(const std::string& keyword);  // 선택된 파일들에서 검색
 
 public:
     const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일 {.*}" };  // 파일 다이얼로그 필터
     std::map<std::string, std::string> selectedFiles;  // 선택된 파일들을 저장할 맵
+
+    std::vector<ExcelSearchResult> searchResults;  // 검색 결과 목록
 };

@@ -103,7 +103,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..;..\..\backends;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;$(SolutionDir)backends;$(SolutionDir)ThirdParty\OpenXLSX;$(SolutionDir)ThirdParty\OpenXLSX\headers;$(SolutionDir)ThirdParty\OpenXLSX\sources;$(SolutionDir)ThirdParty\OpenXLSX\external\pugixml;$(SolutionDir)ThirdParty\OpenXLSX\external\zippy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -111,7 +111,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)/Lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,6 +155,8 @@
   <ItemGroup>
     <ClInclude Include="..\backends\ImGuiFileDialog.h" />
     <ClInclude Include="..\backends\ImGuiFileDialogConfig.h" />
+    <ClInclude Include="..\ThirdParty\OpenXLSX\sources\XLUtilities.hpp" />
+    <ClInclude Include="ExcelSearchResult.h" />
     <ClInclude Include="IconsFontAwesome6.h" />
     <ClInclude Include="ImGuiManager.h" />
     <ClInclude Include="SystemPaths.h" />
@@ -164,6 +166,34 @@
     <ClCompile Include="..\backends\ImGuiFileDialog.cpp" />
     <ClCompile Include="..\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\external\pugixml\pugixml.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCell.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellIterator.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellRange.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellReference.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLCellValue.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLColor.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLColumn.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLComments.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLContentTypes.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDateTime.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDocument.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLDrawing.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLFormula.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLMergeCells.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLProperties.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRelationships.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRow.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLRowData.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLSharedStrings.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLSheet.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLStyles.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLTables.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLWorkbook.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlData.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlFile.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlParser.cpp" />
+    <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp" />
     <ClCompile Include="ImGuiManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SystemPaths.cpp" />

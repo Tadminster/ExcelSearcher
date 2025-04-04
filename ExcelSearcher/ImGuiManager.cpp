@@ -1,6 +1,13 @@
 #include "ImGuiManager.h"
-#include "../backends/ImGuiFileDialog.h"
-#include "SystemPaths.h" 
+
+#include <ImGuiFileDialog.h>
+#include <OpenXLSX.hpp>
+
+#include "SystemPaths.h"
+#include <locale>
+#include <sstream>
+
+
 
 // ImGui 매니저 초기화 함수
 void ImGuiManager::Init()
@@ -91,6 +98,10 @@ void ImGuiManager::Init()
 
     // 기본 창 상태 true로 설정
     isWindowOpen = true;
+
+    // 콘솔 출력 로케일 설정 (한글 지원)
+    std::wcout.imbue(std::locale(""));
+    std::wcerr.imbue(std::locale(""));
 }
 
 void ImGuiManager::SetupImGuiContext(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -128,53 +139,122 @@ void ImGuiManager::Update()
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
-    // 파일 열기용 메인 UI 창
+    static char keywordBuffer[128];  // 검색어 입력 버퍼
+    // 메인 창 시작
     ImGui::Begin("ImGui Window", &isWindowOpen);
     {
-        // 파일 열기 버튼 클릭 시 파일 다이얼로그 열기
-        if (ImGui::Button("파일 열기"))
+        // 파일 열기 버튼
+        if (ImGui::Button(u8"파일 열기"))
         {
+            // 파일 선택기 설정
             IGFD::FileDialogConfig config;
-            config.path = "."; // 현재 경로
-            config.countSelectionMax = 0; // 다중 선택 허용
-            ImGuiFileDialog::Instance()->OpenDialog("FileOpenDialog", "파일 선택", filters, config);
+            config.path = ".";              // 기본 경로
+            config.countSelectionMax = 0;   // 다중 선택
+            ImGuiFileDialog::Instance()->OpenDialog("FileOpenDialog", u8"파일 선택", filters, config);
         }
 
-        // 파일 선택 다이얼로그 표시
+        // 파일 선택기 표시
         if (ImGuiFileDialog::Instance()->Display("FileOpenDialog"))
         {
-            // 확인 버튼 눌렸는지 확인
+            // 파일 선택기에서 선택된 파일 목록 가져오기
             if (ImGuiFileDialog::Instance()->IsOk())
             {
-                // 선택한 파일 정보를 저장
                 selectedFiles = ImGuiFileDialog::Instance()->GetSelection();
             }
-            ImGuiFileDialog::Instance()->Close(); // 다이얼로그 닫기
+            ImGuiFileDialog::Instance()->Close();
         }
-    }
-    ImGui::End();
 
-    // 파일 선택 결과 출력 창 (디버깅 용도)
-    ImGui::Begin("파일 디버깅");
-    if (!selectedFiles.empty())
-    {
-        ImGui::Text("선택된 파일 수: %d", selectedFiles.size());
-
-        // 선택된 각 파일 정보 출력
-        for (const auto& file : selectedFiles)
+        // 선택된 파일 디버깅
+        if (!selectedFiles.empty())
         {
-            const std::string& fileName = file.first;       // 파일명
-            const std::string& filePathName = file.second;  // 전체 경로
+            ImGui::SameLine();
+            ImGui::Text(u8"선택된 파일 개수: %d", selectedFiles.size());
 
-            ImGui::Text("파일 이름: %s", fileName.c_str());
-            ImGui::Text("전체 경로: %s", filePathName.c_str());
-            ImGui::Separator(); // 구분선
+            // 스크롤 가능한 영역 시작
+            float lineHeight = ImGui::GetTextLineHeightWithSpacing();
+            ImVec2 childSize = ImVec2(0, lineHeight * 10); // 세로 길이
+
+
+            ImGui::BeginChild("SelectedFilesList", childSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+            for (const auto& file : selectedFiles)
+            {
+                const std::string& fileName = file.first;
+                const std::string& filePathName = file.second;
+
+                ImGui::BulletText(u8"파일 이름: %s", fileName.c_str());
+                ImGui::Text(u8"전체 경로: %s", filePathName.c_str());
+                ImGui::Separator();
+            }
+            ImGui::EndChild(); // 스크롤 영역 종료
+        }
+        else
+        {
+            ImGui::SameLine();
+            ImGui::Text(u8"현재 선택 파일이 없습니다. 파일을 선택하세요.");
         }
 
-    }
-    else
-    {
-        ImGui::Text("선택된 파일 없음");
+        // 검색어 입력 UI 영역 -----------------------------
+        ImGui::Separator();
+        // 초기화 버튼
+        if (ImGui::Button(ICON_FA_ERASER))
+        {
+            keywordBuffer[0] = '\0'; // 검색어 초기화
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(u8"검색어 초기화\n입력된 모든 검색어를 지우려면 이 버튼을 누르세요.");
+        }
+        ImGui::SameLine();
+
+        // 검색어 입력 필드와 힌트 텍스트 처리
+        ImGui::PushID("SearchBox");
+        ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+        ImGui::SetNextItemWidth(300);
+        ImGui::InputText("##SearchKeyword", keywordBuffer, IM_ARRAYSIZE(keywordBuffer));
+        if (keywordBuffer[0] == '\0' && !ImGui::IsItemActive())
+        {
+            ImGui::GetWindowDrawList()->AddText
+            (
+                cursorPos,
+                ImColor(150, 150, 150, 255),
+                u8"검색어를 입력하세요."
+            );
+        }
+        ImGui::PopID();
+
+        // 검색 버튼
+        ImGui::SameLine();
+        if (ImGui::Button(u8"검색"))
+        {
+            SearchInSelectedFiles(keywordBuffer);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(u8"검색하기\n입력된 단어를 검색하려면 이 버튼을 누르세요.");
+        }
+        // -------------------------------------------------
+
+        ImGui::Separator();
+
+        if (!searchResults.empty())
+        {
+            ImGui::Separator();
+            ImGui::Text(u8"검색 결과: %d개 일치", searchResults.size());
+
+            ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 12);
+            ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+
+            for (const auto& result : searchResults)
+            {
+                ImGui::Text(u8"파일: %s", result.fileName.c_str());
+                ImGui::Text(u8"시트: %s", result.sheetName.c_str());
+                ImGui::Text(u8"셀 위치: %s", result.cellAddress.c_str());
+                ImGui::Text(u8"내용: %s", result.cellValue.c_str());
+                ImGui::Separator();
+            }
+
+            ImGui::EndChild();
+        }
     }
     ImGui::End();
 }
@@ -215,5 +295,131 @@ void ImGuiManager::SetupStyle()
     {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+}
+
+// 선택된 파일들에서 keyword를 검색하는 함수
+void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
+{
+    // 검색어가 비어 있다면 아무 작업도 하지 않음
+    if (keyword.empty())
+        return;
+
+    // 이전 검색 결과를 초기화
+    searchResults.clear();
+
+    // 검색어 출력
+    std::wcout << L"검색어: " << std::wstring(keyword.begin(), keyword.end()) << std::endl;
+
+    // 선택된 모든 파일을 순회
+    for (const auto& filePair : selectedFiles)
+    {
+        const std::string& fileName = filePair.first;   // 파일 이름
+        const std::string& filePath = filePair.second;  // 전체 경로
+
+        // 파일 경로와 이름 출력
+        std::wcout << L"파일 이름: " << std::wstring(fileName.begin(), fileName.end()) << std::endl;
+        std::wcout << L"전체 경로: " << std::wstring(filePath.begin(), filePath.end()) << std::endl;
+
+        try
+        {
+            // OpenXLSX를 사용하여 엑셀 파일 열기
+            OpenXLSX::XLDocument doc;
+            doc.open(filePath);
+
+            // 시트 개수 출력
+            int sheetcnt = doc.workbook().sheetCount();
+            std::wcout << L"시트 개수: " << sheetcnt << std::endl;
+
+            // 워크북에 존재하는 모든 시트를 순회
+            for (const auto& sheetName : doc.workbook().worksheetNames())
+            {
+                // 시트 이름 출력
+                std::wcout << L"시트 이름: " << std::wstring(sheetName.begin(), sheetName.end()) << std::endl;
+
+                // 해당 시트를 가져옴
+                OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
+
+                // 시트 전체 범위를 가져옴
+                OpenXLSX::XLCellRange range = sheet.range();
+                OpenXLSX::XLCellReference firstCell = range.topLeft();      // 시작 셀 (예: A1)
+                OpenXLSX::XLCellReference lastCell = range.bottomRight();   // 끝 셀 (예: E20)
+
+                // 모든 행(row)을 순회
+                for (uint64_t row = firstCell.row(); row <= lastCell.row(); ++row)
+                {
+                    // 모든 열(column)을 순회
+                    for (uint16_t col = firstCell.column(); col <= lastCell.column(); ++col)
+                    {
+                        // 셀 참조를 생성 (예: A1, B2 등)
+                        OpenXLSX::XLCellReference cellRef(row, col);
+
+                        // 해당 셀을 가져옴
+                        auto cell = sheet.cell(cellRef);
+
+                        // 셀에 값이 있는 경우
+                        if (!cell.empty())
+                        {
+                            // 셀의 값을 가져옴
+                            OpenXLSX::XLCellValue value = cell.value();
+
+                            // 셀의 값 타입에 따라 처리
+                            switch (value.type())
+                            {
+                                // 셀의 값이 문자열인 경우
+                            case OpenXLSX::XLValueType::String:
+                            {
+                                std::string cellText = value.get<std::string>();
+                                // 검색어 포함 검사
+                                if (cellText.find(keyword) != std::string::npos)
+                                {
+                                    ExcelSearchResult result;
+                                    result.fileName = fileName;
+                                    result.sheetName = sheetName;
+                                    result.cellAddress = cellRef.address();
+                                    result.cellValue = cellText;
+                                    searchResults.push_back(result);
+                                }
+                            }
+                            break;
+
+                            // 셀의 값이 숫자, 부동소수점, 불리언인 경우
+                            case OpenXLSX::XLValueType::Integer:
+                            case OpenXLSX::XLValueType::Float:
+                            case OpenXLSX::XLValueType::Boolean:
+                            {
+                                std::ostringstream oss;
+                                oss << value;  // OpenXLSX는 ostream 연산자 << 를 오버로드했음
+
+                                std::string cellText = oss.str();
+                                if (cellText.find(keyword) != std::string::npos)
+                                {
+                                    ExcelSearchResult result;
+                                    result.fileName = fileName;
+                                    result.sheetName = sheetName;
+                                    result.cellAddress = cellRef.address();
+                                    result.cellValue = cellText;
+                                    searchResults.push_back(result);
+                                }
+                            }
+                            case OpenXLSX::XLValueType::Empty:
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 엑셀 문서 닫기
+            doc.close();
+        }
+        catch (const std::exception& ex)
+        {
+            // 파일 처리 중 에러 발생 시 콘솔에 출력
+            std::wcout << L"파일 처리 오류: " << std::wstring(filePath.begin(), filePath.end()) << std::endl;
+            std::wcout << L"사유: " << std::wstring(ex.what(), ex.what() + strlen(ex.what())) << std::endl;
+        }
     }
 }
