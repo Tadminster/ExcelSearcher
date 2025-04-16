@@ -33,9 +33,7 @@
     <ClInclude Include="..\ThirdParty\OpenXLSX\sources\XLUtilities.hpp">
       <Filter>OpenXLSX</Filter>
     </ClInclude>
-    <ClInclude Include="SystemPaths.h">
-      <Filter>sources</Filter>
-    </ClInclude>
+    <ClInclude Include="SystemUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -137,9 +135,7 @@
     <ClCompile Include="..\ThirdParty\OpenXLSX\external\pugixml\pugixml.cpp">
       <Filter>OpenXLSX</Filter>
     </ClCompile>
-    <ClCompile Include="SystemPaths.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
+    <ClCompile Include="SystemUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />

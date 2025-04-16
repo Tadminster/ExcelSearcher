@@ -32,5 +32,7 @@
 *.app
 /.vs
 /ConsonantMatcher/Debug
+
+# Build directories
 /ExcelSearcher/Release
 /ExcelSearcher/Debug
