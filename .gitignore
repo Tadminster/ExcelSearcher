@@ -32,3 +32,5 @@
 *.app
 /.vs
 /ConsonantMatcher/Debug
+/ExcelSearcher/Release
+/ExcelSearcher/Debug
