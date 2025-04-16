@@ -8,7 +8,6 @@
 #include <sstream>
 
 
-
 // ImGui 매니저 초기화 함수
 void ImGuiManager::Init()
 {
@@ -34,14 +33,15 @@ void ImGuiManager::Init()
 
     // 한글 폰트 로드
     //io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
-    io.Fonts->AddFontFromFileTTF("..\\Contents\\Fonts\\NotoSansKR-Medium.ttf", 20.0f, NULL, io.Fonts->GetGlyphRangesKorean());
+    //io.Fonts->AddFontFromFileTTF("..\\Contents\\Fonts\\NotoSansKR-Medium.ttf", 20.0f, NULL, io.Fonts->GetGlyphRangesKorean());
+    io.Fonts->AddFontFromFileTTF("Resource/NotoSansKR-Medium.ttf", 20.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
     // 아이콘 폰트 병합 및 로드
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
     ImFontConfig icons_config;
     icons_config.MergeMode = true;    // 기존 폰트와 병합하여 사용
     icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF("..\\Contents\\Fonts\\FontAwesome-solid-900.otf", 18.0f, &icons_config, icons_ranges);
+    io.Fonts->AddFontFromFileTTF("Resource/FontAwesome-solid-900.otf", 18.0f, &icons_config, icons_ranges);
 
 
     // 스타일 설정
@@ -109,6 +109,9 @@ void ImGuiManager::SetupImGuiContext(HWND hwnd, ID3D11Device* device, ID3D11Devi
     // 플랫폼/렌더러 백엔드 초기화
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, deviceContext);
+
+    // 뷰포트에 아이콘 설정
+    SetupWindowIconsForViewports(); 
 }
 
 
@@ -141,7 +144,7 @@ void ImGuiManager::Update()
 
     static char keywordBuffer[128];  // 검색어 입력 버퍼
     // 메인 창 시작
-    ImGui::Begin("ImGui Window", &isWindowOpen);
+    ImGui::Begin(u8"Excel Searcher", &isWindowOpen);
     {
         // 파일 열기 버튼
         if (ImGui::Button(u8"파일 열기"))
@@ -466,6 +469,7 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
             std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
             std::wcout << L"사유: " << wErr << std::endl;
         }
+
     }
 }
 
@@ -534,8 +538,54 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
 
 
 // ==========================================================================
-// 원본 엑셀 파일을 임시 디렉토리로 복사하고 그 경로를 반환
-// OpenXLSX가 직접 한글 경로를 지원하지 않기 때문에 복사 방식 사용
+// 다중 뷰포트(독립 OS 창) 생성 시, 각 창에 아이콘을 설정하기 위한 콜백 함수 등록
+// ImGui가 창을 생성할 때 Platform_CreateWindow를 호출하므로, 이를 오버라이드함
+// ==========================================================================
+void ImGuiManager::SetupWindowIconsForViewports()
+{
+    static auto original_create_window = ImGui::GetPlatformIO().Platform_CreateWindow;
+
+    ImGui::GetPlatformIO().Platform_CreateWindow = [](ImGuiViewport* viewport)
+        {
+            // 기존 창 생성 콜백 호출
+            if (original_create_window)
+            {
+                original_create_window(viewport);
+            }
+
+            // 생성된 창 핸들에서 아이콘 설정
+            if (viewport->PlatformHandleRaw)
+            {
+                HWND hwnd = (HWND)viewport->PlatformHandleRaw;
+
+                // 아이콘 파일을 로드하여 창에 설정
+                HICON hIcon = (HICON)LoadImageW
+                (
+                    nullptr,
+                    L"Resource/icon.ico",
+                    IMAGE_ICON,
+                    0, 0,
+                    LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED
+                );
+
+                if (hIcon)
+                {
+                    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+                    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+                }
+                else
+                {
+                    DWORD err = GetLastError();
+
+                    std::wcerr << L"아이콘 로드 실패. 오류 코드: " << err << std::endl;
+                }
+            }
+        };
+}
+
+// ==========================================================================
+// OpenXLSX는 UTF-8 한글 경로를 직접 지원하지 않기 때문에,
+// 엑셀 파일을 임시 경로에 복사한 후, 해당 파일을 열도록 우회 처리
 // ==========================================================================
 std::string ImGuiManager::CopyExcelFile(const std::string& originalPath)
 {
@@ -554,7 +604,6 @@ std::string ImGuiManager::CopyExcelFile(const std::string& originalPath)
         //실패 시 에러 메시지 출력
         std::wcerr << L"파일 복사 실패: " << wOriginal << std::endl;
         std::wcerr << L"사유: " << GetLastError() << std::endl;
-
     }
 
     return SystemUtils::WStringToUTF8(wTempPath);
