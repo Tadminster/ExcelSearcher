@@ -27,8 +27,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // 프로젝트 우클릭 > 속성 > 링커 > 시스템 > 하위 시스템에서
 // 콘솔 (/SUBSYSTEM:CONSOLE) 은 main
 // 윈도우 (/SUBSYSTEM:WINDOWS) 는 WinMain
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-int main(int, char**)
+//int main(int, char**)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Create application window
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC | CS_IME, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
