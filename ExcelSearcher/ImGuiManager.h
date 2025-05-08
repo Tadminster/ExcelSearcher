@@ -54,5 +54,5 @@ private:
     // 엑셀 파일 검색 처리
     void SearchInSelectedFiles(const std::string& keyword);  // 선택된 파일들에서 검색
     std::string CopyExcelFile(const std::string& originalPath); // 엑셀 파일 복사
-    bool ProcessCell(OpenXLSX::XLWorksheet& sheet, const std::string& fileName, const std::string& sheetName, const std::string& keyword, uint64_t row, uint16_t col);
+    bool ProcessCell(OpenXLSX::XLWorksheet& sheet, const std::string& fileName, const std::string& sheetName, const std::string& keyword, uint16_t row, uint16_t col);
 };

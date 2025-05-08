@@ -1,11 +1,12 @@
 #include "ImGuiManager.h"
 
+#include <locale>
+#include <sstream>
+
 #include <ImGuiFileDialog.h>
 #include <OpenXLSX.hpp>
 
 #include "SystemUtils.h"
-#include <locale>
-#include <sstream>
 
 
 // ImGui 매니저 초기화 함수
@@ -372,7 +373,7 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
             {
                 // 시트 이름 출력
                 std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
-                std::wcout << L"시트 이름: " << wSheetName;
+                std::wcout << L"  ㄴ시트 이름: " << wSheetName;
 
                 // 시트 객체 생성
                 OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
@@ -385,15 +386,16 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                     // 비어 있는 시트는 건너뜀
                     if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
                     {
-                        std::wcout << L"시트가 비어 있어 건너뜁니다: " << wSheetName << std::endl;
-                        break;
+                        std::wcout << L"    ㄴ해당 시트는 비어 있어 건너뜁니다: " << std::endl;
+                        continue;
                     }
 
                     // 셀의 개수가 비정상적으로 많으면 예외 발생 > fallback으로 대체
-                    if (sheet.rowCount() > 1000 || sheet.columnCount() > 1000)
+                    if (sheet.rowCount() > 2000 || sheet.columnCount() > 2000)
                     {
-                        std::wcout << L"셀의 개수가 비정상적으로 많습니다." << std::endl;
-                        throw std::runtime_error("too large for range");
+                        std::wcout << L"    ㄴ해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다." << std::endl;
+                        //throw std::runtime_error("too large for range");
+                        continue;
                     }
 
                     // 시트 전체 범위를 가져오기
@@ -402,7 +404,7 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                     auto last = range.bottomRight();
 
                     // 셀 순회
-                    for (uint64_t row = first.row(); row <= last.row(); ++row)
+                    for (uint16_t row = first.row(); row <= last.row(); ++row)
                     {
                         for (uint16_t col = first.column(); col <= last.column(); ++col)
                         {
@@ -415,17 +417,20 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                     // 예외 발생 시 알림
                     std::wcout << L"range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
 
+                    // 시트가 연속적으로 비어있을 때 스킵할 플래그 변수
+                    bool bSkipSheet = false;
+
                     // fallback 처리
                     // 20 * 30 셀을 순회하며 검색, 100개 연속 빈 셀 탐지 시 스킵
-                    const uint64_t maxRows = 20;
+                    const uint16_t maxRows = 20;
                     const uint16_t maxCols = 30;
                     const int maxConsecutiveEmptyCells = 100;
 
                     // 빈 셀 카운트를 저장할 변수
-                    int emptyCellStreak = 0;
+                    int emptyCellStack = 0;
 
                     // 셀 순회
-                    for (uint64_t col = 1; col <= maxCols; ++col)
+                    for (uint16_t col = 1; col <= maxCols && !bSkipSheet; ++col)
                     {
                         for (uint16_t row = 1; row <= maxRows; ++row)
                         {
@@ -435,29 +440,31 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                             if (!hasValue)
                             {
                                 // 빈 셀 카운트 증가
-                                emptyCellStreak++;
+                                emptyCellStack++;
 
                                 // 연속 빈 셀 카운트가 최대값에 도달하면 스킵
-                                if (emptyCellStreak >= maxConsecutiveEmptyCells)
+                                if (emptyCellStack >= maxConsecutiveEmptyCells)
                                 {
-                                    std::wcout << L"📭 연속으로 "
+                                    std::wcout << L"연속으로 "
                                         << maxConsecutiveEmptyCells
                                         << L"개의 빈 셀이 탐지되어 시트를 스킵합니다." << std::endl;
-                                    goto SkipSheet;
+
+                                    bSkipSheet = true; // 바깥쪽 반복문 종료
+                                    break; // 안쪽 반복문 종료
                                 }
                             }
                             else
                             {
                                 // 유효셀을 찾았으면 빈 셀 카운트 초기화
-                                emptyCellStreak = 0;
+                                emptyCellStack = 0;
                             }
                         }
                     }
-
-                SkipSheet:
-                    continue;
                 }
             }
+
+            std::wcout << std::endl << wfileName << L" 검색 완료. 문서를 닫습니다." << std::endl;
+
 
             // 엑셀 문서 닫기
             doc.close();
@@ -469,7 +476,6 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
             std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
             std::wcout << L"사유: " << wErr << std::endl;
         }
-
     }
 }
 
@@ -480,7 +486,7 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     const std::string& fileName,
     const std::string& sheetName,
     const std::string& keyword,
-    uint64_t row, uint16_t col)
+    uint16_t row, uint16_t col)
 {
     try
     {
