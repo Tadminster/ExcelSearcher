@@ -12,6 +12,10 @@
 // ImGui 매니저 초기화 함수
 void ImGuiManager::Init()
 {
+    // 콘솔 출력 로케일 설정 (한글 지원)
+    std::wcout.imbue(std::locale(""));
+    std::wcerr.imbue(std::locale(""));
+
     // ImGui 버전 체크 및 컨텍스트 생성
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -53,39 +57,46 @@ void ImGuiManager::Init()
 
     // 사용자 정의 경로 그룹 생성
     auto places_ptr = ImGuiFileDialog::Instance()->GetPlacesGroupPtr(placesBookmarksGroupName);
-    if (places_ptr != nullptr)
+    if (places_ptr)
     {
         // 시스템 경로 가져오기
         std::string downloadsPath = SystemUtils::GetDownloads();
         std::string documentsPath = SystemUtils::GetDocuments();
         std::string desktopPath = SystemUtils::GetDesktop();
 
-        // 자주 접근할 폴더 바로가기 추가 (자동 경로 사용)
+        // 자주 접근할 폴더 바로가기 추가
         if (!desktopPath.empty())
         {
             std::string placeName = std::string(ICON_FA_PERSON_THROUGH_WINDOW) + "  바탕화면";
-            places_ptr->AddPlace(placeName.c_str(), desktopPath, true, IGFD::FileStyle(ImVec4(1.0f, 0.6f, 0.2f, 1.0f)));
+            places_ptr->AddPlace(placeName.c_str(), desktopPath, false, IGFD::FileStyle(ImVec4(1.0f, 0.6f, 0.2f, 1.0f)));
         }
 
         if (!downloadsPath.empty())
         {
             std::string placeName = std::string(ICON_FA_DOWNLOAD) + "   다운로드";
-            places_ptr->AddPlace(placeName.c_str(), downloadsPath, true, IGFD::FileStyle(ImVec4(0.1f, 0.8f, 0.2f, 1.0f)));
+            places_ptr->AddPlace(placeName.c_str(), downloadsPath, false, IGFD::FileStyle(ImVec4(0.1f, 0.8f, 0.2f, 1.0f)));
         }
 
         if (!documentsPath.empty())
         {
             std::string placeName = std::string(ICON_FA_NEWSPAPER) + "   내 문서";
-            places_ptr->AddPlace(placeName.c_str(), documentsPath, true, IGFD::FileStyle(ImVec4(0.2f, 0.7f, 1.0f, 1.0f)));
+            places_ptr->AddPlace(placeName.c_str(), documentsPath, false, IGFD::FileStyle(ImVec4(0.2f, 0.7f, 1.0f, 1.0f)));
         }
 
+        places_ptr->AddPlaceSeparator(2.0f); // 구분선 추가
+    }
 
-        // 구분선 추가
-        places_ptr->AddPlaceSeparator(2.0f);
+    // 즐겨찾기 불러오기
+    std::ifstream ifs("bookmarks.dat", std::ios::binary);
+    if (ifs)
+    {
+        std::stringstream data;
+        data << ifs.rdbuf();
+        ImGuiFileDialog::Instance()->DeserializePlaces(data.str());
     }
 
 
-    // 특정 파일 확장자에 강조색
+    // 특정 파일 확장자 강조색
     {
         // 엑셀
         //ImVec4 ExcelColor(0.1f, 0.8f, 0.2f, 1.0f); // 초록
@@ -97,12 +108,13 @@ void ImGuiManager::Init()
         ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, nullptr, DirColor);
     }
 
+
+
+
     // 기본 창 상태 true로 설정
     isWindowOpen = true;
 
-    // 콘솔 출력 로케일 설정 (한글 지원)
-    std::wcout.imbue(std::locale(""));
-    std::wcerr.imbue(std::locale(""));
+
 }
 
 void ImGuiManager::SetupImGuiContext(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -123,6 +135,14 @@ bool ImGuiManager::IsDone() const
 
 void ImGuiManager::Release()
 {
+    std::ofstream ofs("bookmarks.dat", std::ios::binary);
+    if (ofs)
+    {
+        std::string serialized = ImGuiFileDialog::Instance()->SerializePlaces();
+
+        ofs.write(serialized.c_str(), serialized.size());
+    }
+
     // ImGui 셧다운 및 리소스 해제
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
@@ -259,7 +279,7 @@ void ImGuiManager::Update()
                 ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch, 4.0f);  // 4/10
                 ImGui::TableHeadersRow();
 
-                // 결과 반복 출력
+                // 결과 출력 영역
                 for (const auto& result : searchResults)
                 {
                     ImGui::TableNextRow();
@@ -288,7 +308,7 @@ void ImGuiManager::Update()
 
 void ImGuiManager::LateUpdate()
 {
-    // 만약 추가적인 업데이트가 필요한 경우, LateUpdate에서 처리
+    
 }
 
 void ImGuiManager::Render()
@@ -308,7 +328,7 @@ void ImGuiManager::Render()
 
 void ImGuiManager::ResizeScreen()
 {
-    // 스크린 크기 변경에 따라 필요한 작업을 처리
+    
 }
 
 void ImGuiManager::SetupStyle()
@@ -326,7 +346,7 @@ void ImGuiManager::SetupStyle()
 }
 
 // ==========================================================================
-// 선택된 엑셀 파일들에서 특정 키워드를 검색하는 메인 처리 함수
+// 엑셀파일 내 특정 키워드를 검색하는 메인 처리 함수
 // ==========================================================================
 void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
 {
@@ -414,7 +434,7 @@ void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
                 }
                 catch (const std::exception& ex)
                 {
-                    // 예외 발생 시 알림
+                    // 예외 발생 알림
                     std::wcout << L"range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
 
                     // 시트가 연속적으로 비어있을 때 스킵할 플래그 변수

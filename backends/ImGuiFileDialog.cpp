@@ -3214,17 +3214,35 @@ bool IGFD::PlacesFeature::m_DrawPlacesPane(FileDialogInternal& vFileDialogIntern
     return res;
 }
 
+//std::string IGFD::PlacesFeature::SerializePlaces(const bool /*vForceSerialisationForAll*/) {
+//    std::string res;
+//    size_t idx = 0;
+//    for (const auto& group : m_Groups) {
+//        if (group.second->canBeSaved) {
+//            // ## is used because reserved by imgui, so an input text cannot have ##
+//            res += "###" + group.first + "###\n";
+//            for (const auto& place : group.second->places) {
+//                if (place.canBeSaved) {
+//                    if (idx++ != 0) res += "##";
+//                    res += place.name + "##" + place.path + "\n";
+//                }
+//            }
+//        }
+//    }
+//    return res;
+//}
+
 std::string IGFD::PlacesFeature::SerializePlaces(const bool /*vForceSerialisationForAll*/) {
     std::string res;
-    size_t idx = 0;
     for (const auto& group : m_Groups) {
         if (group.second->canBeSaved) {
-            // ## is used because reserved by imgui, so an input text cannot have ##
-            res += "###" + group.first + "###";
+            // header is ###group_name\n
+            res += "###" + group.first + "\n";
+
             for (const auto& place : group.second->places) {
-                if (place.canBeSaved) {
-                    if (idx++ != 0) res += "##";
-                    res += place.name + "##" + place.path;
+                if (place.canBeSaved && !place.name.empty() && !place.path.empty()) {
+                    // each place is ##place_name##place_path\n
+                    res += "##" + place.name + "##" + place.path + "##\n";
                 }
             }
         }
@@ -3232,18 +3250,55 @@ std::string IGFD::PlacesFeature::SerializePlaces(const bool /*vForceSerialisatio
     return res;
 }
 
+//void IGFD::PlacesFeature::DeserializePlaces(const std::string& vPlaces) {
+//    if (!vPlaces.empty()) {
+//        //const auto& groups = IGFD::Utils::SplitStringToVector(vPlaces, "###", false);
+//        const auto& groups = IGFD::Utils::SplitStringToVector(vPlaces, "\n", false);
+//        if (groups.size() > 1) {
+//            for (size_t i = 0; i < groups.size(); i += 2) {
+//                auto group_ptr = GetPlacesGroupPtr(groups[i]);
+//                if (group_ptr != nullptr) {
+//                    const auto& places = IGFD::Utils::SplitStringToVector(groups[i + 1], "##", false);
+//                    if (places.size() > 1) {
+//                        for (size_t j = 0; j < places.size(); j += 2) {
+//                            group_ptr->AddPlace(places[j], places[j + 1], true);  // was saved so we set canBeSaved to true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+
 void IGFD::PlacesFeature::DeserializePlaces(const std::string& vPlaces) {
     if (!vPlaces.empty()) {
-        const auto& groups = IGFD::Utils::SplitStringToVector(vPlaces, "###", false);
-        if (groups.size() > 1) {
-            for (size_t i = 0; i < groups.size(); i += 2) {
-                auto group_ptr = GetPlacesGroupPtr(groups[i]);
-                if (group_ptr != nullptr) {
-                    const auto& places = IGFD::Utils::SplitStringToVector(groups[i + 1], "##", false);
-                    if (places.size() > 1) {
-                        for (size_t j = 0; j < places.size(); j += 2) {
-                            group_ptr->AddPlace(places[j], places[j + 1], true);  // was saved so we set canBeSaved to true
-                        }
+        const auto& lines = IGFD::Utils::SplitStringToVector(vPlaces, "\n", false);
+
+        std::string currentGroup;
+
+        for (auto line : lines) {
+            // Remove Windows carriage return (CR)
+            if (!line.empty() && line.back() == '\r') {
+                line = line.substr(0, line.size() - 1);
+            }
+
+            // group header
+            if (line.rfind("###", 0) == 0) {
+                currentGroup = line.substr(3);  // The text after "###" is the group name
+
+            }
+            // Bookmark entry
+            else if (line.rfind("##", 0) == 0 && !currentGroup.empty()) {
+                const auto& tokens = IGFD::Utils::SplitStringToVector(line, "##", false);
+
+                // Expected format: ["name", "path"]
+                if (tokens.size() >= 2) {
+                    const std::string& name = tokens[0];
+                    const std::string& path = tokens[1];
+
+                    auto group_ptr = GetPlacesGroupPtr(currentGroup);
+                    if (group_ptr != nullptr) {
+                        group_ptr->AddPlace(name, path, true);
                     }
                 }
             }
@@ -3289,6 +3344,14 @@ bool IGFD::PlacesFeature::GroupStruct::AddPlace(const std::string& vPlaceName, c
     if (vPlaceName.empty() || vPlacePath.empty()) {
         return false;
     }
+
+    // Check for duplicate paths
+    for (const auto& existingPlace : places) {
+        if (existingPlace.path == vPlacePath) {
+            return false; // If it's a duplicate, return
+        }
+    }
+
     canBeSaved |= vCanBeSaved;  // if one place must be saved so we mark the group to be saved
     PlaceStruct place;
     place.name       = vPlaceName;
