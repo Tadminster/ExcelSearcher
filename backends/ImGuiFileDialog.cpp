@@ -3188,15 +3188,37 @@ bool IGFD::PlacesFeature::m_DrawPlacesPane(FileDialogInternal& vFileDialogIntern
                                     ImGui::PopStyleColor();
                                     ImGui::SameLine();
                                 }
+
                                 if (ImGui::Selectable(place_name.c_str(), current_path == place.path || group_ptr->selectedPlaceForEdition == i, ImGuiSelectableFlags_AllowDoubleClick)) {  // select if path is current
                                     if (ImGui::IsMouseDoubleClicked(0)) {
-                                        group_ptr->selectedPlaceForEdition = -1;  // stop edition
-                                        // apply path
-                                        vFileDialogInternal.fileManager.SetCurrentPath(place.path);
-                                        vFileDialogInternal.fileManager.OpenCurrentPath(vFileDialogInternal);
-                                        res = true;
+                                        //group_ptr->selectedPlaceForEdition = -1;  // stop edition
+                                        //// apply path
+                                        //vFileDialogInternal.fileManager.SetCurrentPath(place.path);
+                                        //vFileDialogInternal.fileManager.OpenCurrentPath(vFileDialogInternal);
+                                        //res = true;
+                                        group_ptr->selectedPlaceForEdition = i;
+
+                                        IGFD::Utils::ResetBuffer(group_ptr->editBuffer);
+                                        IGFD::Utils::AppendToBuffer(group_ptr->editBuffer, MAX_FILE_DIALOG_NAME_BUFFER, place.name);
+
+                                        ImGui::OpenPopup(u8"새 이름을 입력하세요");
                                     }
                                 }
+                                if (ImGui::BeginPopupContextItem(place.name.c_str())) {
+                                    if (ImGui::MenuItem(u8"이름 수정하기")) {
+                                        group_ptr->selectedPlaceForEdition = i;
+                                        IGFD::Utils::ResetBuffer(group_ptr->editBuffer);
+                                        IGFD::Utils::AppendToBuffer(group_ptr->editBuffer, MAX_FILE_DIALOG_NAME_BUFFER, place.name);
+                                    }
+                                    if (ImGui::MenuItem(u8"즐겨찾기 제거")) {
+                                        group_ptr->RemovePlace(place.name);
+                                        ImGui::EndPopup();
+                                        ImGui::PopID();
+                                        break;
+                                    }
+                                    ImGui::EndPopup();
+                                }
+
                                 ImGui::PopID();
                                 if (ImGui::IsItemHovered()) {
                                     ImGui::SetTooltip("%s", place.path.c_str());
@@ -3205,6 +3227,34 @@ bool IGFD::PlacesFeature::m_DrawPlacesPane(FileDialogInternal& vFileDialogIntern
                         }
                     }
                     group_ptr->clipper.End();
+
+                    if (group_ptr->selectedPlaceForEdition != -1) {
+                        ImGui::OpenPopup(u8"새 이름을 입력하세요");
+                    }
+                }
+
+                if (group_ptr->selectedPlaceForEdition != -1) {
+                    if (ImGui::BeginPopupModal(u8"새 이름을 입력하세요", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                        ImGui::InputText("##NewName", group_ptr->editBuffer, MAX_FILE_DIALOG_NAME_BUFFER);
+
+                        if (ImGui::Button(u8"확인")) {
+                            std::string newName = group_ptr->editBuffer;
+                            if (!newName.empty()) {
+                                group_ptr->places[group_ptr->selectedPlaceForEdition].name = newName;
+                            }
+                            group_ptr->selectedPlaceForEdition = -1;
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::SameLine();
+
+                        if (ImGui::Button(u8"취소")) {
+                            group_ptr->selectedPlaceForEdition = -1;
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::EndPopup();
+                    }
                 }
                 ImGui::EndChild();
             }
@@ -3324,6 +3374,8 @@ bool IGFD::PlacesFeature::AddPlacesGroup(const std::string& vGroupName, const si
 }
 
 bool IGFD::PlacesFeature::RemovePlacesGroup(const std::string& vGroupName) {
+    std::cout << "2RemovePlacesGroup: " << vGroupName << std::endl;
+
     for (auto it = m_Groups.begin(); it != m_Groups.end(); ++it) {
         if ((*it).second->name == vGroupName) {
             m_Groups.erase(it);
@@ -3369,6 +3421,8 @@ void IGFD::PlacesFeature::GroupStruct::AddPlaceSeparator(const float& vThickness
 }
 
 bool IGFD::PlacesFeature::GroupStruct::RemovePlace(const std::string& vPlaceName) {
+    std::cout << "RemovePlace: " << vPlaceName << std::endl;
+
     if (vPlaceName.empty()) {
         return false;
     }
@@ -5192,6 +5246,7 @@ IGFD_C_API bool IGFD_AddPlacesGroup(ImGuiFileDialog* vContextPtr, const char* vG
 }
 
 IGFD_C_API bool IGFD_RemovePlacesGroup(ImGuiFileDialog* vContextPtr, const char* vGroupName) {
+    std::cout << "1IGFD_RemovePlacesGroup called with group: " << vGroupName << std::endl;
     if (vContextPtr != nullptr) {
         return vContextPtr->RemovePlacesGroup(vGroupName);
     }
@@ -5211,6 +5266,8 @@ IGFD_C_API bool IGFD_AddPlace(ImGuiFileDialog* vContextPtr, const char* vGroupNa
 }
 
 IGFD_C_API bool IGFD_RemovePlace(ImGuiFileDialog* vContextPtr, const char* vGroupName, const char* vPlaceName) {
+    std::cout << "3IGFD_RemovePlace called with group: " << vGroupName << " and place: " << vPlaceName << std::endl;
+
     if (vContextPtr != nullptr) {
         auto group_ptr = vContextPtr->GetPlacesGroupPtr(vGroupName);
         if (group_ptr != nullptr) {

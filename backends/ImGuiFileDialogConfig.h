@@ -183,7 +183,7 @@
  #define addPlaceButtonString ICON_FA_CIRCLE_PLUS u8"  새 즐겨찾기 추가       "//"+"
  //#define removePlaceButtonString "-"
  //#define validatePlaceButtonString "ok"
- //#define editPlaceButtonString "E"
+ #define editPlaceButtonString ""
 
 //////////////////////////////////////
 //// PLACES FEATURES : BOOKMARKS /////
