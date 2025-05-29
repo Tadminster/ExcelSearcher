@@ -3191,22 +3191,16 @@ bool IGFD::PlacesFeature::m_DrawPlacesPane(FileDialogInternal& vFileDialogIntern
 
                                 if (ImGui::Selectable(place_name.c_str(), current_path == place.path || group_ptr->selectedPlaceForEdition == i, ImGuiSelectableFlags_AllowDoubleClick)) {  // select if path is current
                                     if (ImGui::IsMouseDoubleClicked(0)) {
-                                        //group_ptr->selectedPlaceForEdition = -1;  // stop edition
+                                        group_ptr->selectedPlaceForEdition = -1;  // stop edition
                                         //// apply path
-                                        //vFileDialogInternal.fileManager.SetCurrentPath(place.path);
-                                        //vFileDialogInternal.fileManager.OpenCurrentPath(vFileDialogInternal);
-                                        //res = true;
-                                        group_ptr->selectedPlaceForEdition = i;
-
-                                        IGFD::Utils::ResetBuffer(group_ptr->editBuffer);
-                                        IGFD::Utils::AppendToBuffer(group_ptr->editBuffer, MAX_FILE_DIALOG_NAME_BUFFER, place.name);
-
-                                        ImGui::OpenPopup(u8"새 이름을 입력하세요");
+                                        vFileDialogInternal.fileManager.SetCurrentPath(place.path);
+                                        vFileDialogInternal.fileManager.OpenCurrentPath(vFileDialogInternal);
+                                        res = true;
                                     }
                                 }
                                 if (ImGui::BeginPopupContextItem(place.name.c_str())) {
                                     if (ImGui::MenuItem(u8"이름 수정하기")) {
-                                        group_ptr->selectedPlaceForEdition = i;
+                                        group_ptr->selectedPlaceForEdition = 1;
                                         IGFD::Utils::ResetBuffer(group_ptr->editBuffer);
                                         IGFD::Utils::AppendToBuffer(group_ptr->editBuffer, MAX_FILE_DIALOG_NAME_BUFFER, place.name);
                                     }
