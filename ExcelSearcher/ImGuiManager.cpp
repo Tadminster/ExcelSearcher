@@ -183,7 +183,38 @@ void ImGuiManager::Update()
             // 파일 선택기에서 선택된 파일 목록 가져오기
             if (ImGuiFileDialog::Instance()->IsOk())
             {
-                selectedFiles = ImGuiFileDialog::Instance()->GetSelection();
+                // 현재 선택된 모든 파일
+                auto allSelected = ImGuiFileDialog::Instance()->GetSelection();
+
+                // 기존에 선택된 파일 목록 초기화
+                selectedFiles.clear();
+
+                // 현재 필터 확인
+                std::string currentFilter = ImGuiFileDialog::Instance()->GetCurrentFilter();
+
+                // 사용자가 모든 파일(.*) 필터를 선택한 경우
+                if (currentFilter == ".*")
+                {
+                    // 선택된 파일 중 엑셀 파일만 필터링
+                    for (const auto& pair : allSelected)
+                    {
+                        const std::string& filePath = pair.second;
+                        if (filePath.size() >= 5)
+                        {
+                            std::string extension = filePath.substr(filePath.size() - 5);
+                            std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+                            if (extension == ".xlsx")
+                            {
+                                selectedFiles.insert(pair);
+                            }
+                        }
+                    }
+                }
+                // 그 외엔 모든 파일을 선택
+                else
+                {
+                    selectedFiles = allSelected;
+                }
             }
             ImGuiFileDialog::Instance()->Close();
         }
