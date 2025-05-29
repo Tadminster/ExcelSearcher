@@ -37,7 +37,7 @@ public:
 
 public:
     // 파일 다이얼로그 설정
-    const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일 {.*}" };
+    const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일{.*}" };
 
     // 외부 접근이 필요한 데이터
     std::map<std::string, std::string> selectedFiles;        // 선택된 파일 경로

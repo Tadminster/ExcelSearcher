@@ -203,5 +203,5 @@
 // by ex if you would like to display a specific icon for some devices
  #define USE_PLACES_DEVICES
  #define PLACES_DEVICES_DEFAULT_OPEPEND true
- #define placesDevicesGroupName ICON_FA_DESKTOP u8"  이 기기"//"Devices"
+ #define placesDevicesGroupName ICON_FA_DESKTOP u8"  내 컴퓨터"//"Devices"
  //#define placesDevicesDisplayOrder 10  // to the end

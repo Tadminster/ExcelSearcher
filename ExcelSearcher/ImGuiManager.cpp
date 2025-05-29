@@ -190,10 +190,10 @@ void ImGuiManager::Update()
                 selectedFiles.clear();
 
                 // 현재 필터 확인
-                std::string currentFilter = ImGuiFileDialog::Instance()->GetCurrentFilter();
+                std::wstring currentFilter = SystemUtils::UTF8ToWString(ImGuiFileDialog::Instance()->GetCurrentFilter());
 
                 // 사용자가 모든 파일(.*) 필터를 선택한 경우
-                if (currentFilter == ".*")
+                if (currentFilter == L"모든 파일")
                 {
                     // 선택된 파일 중 엑셀 파일만 필터링
                     for (const auto& pair : allSelected)
