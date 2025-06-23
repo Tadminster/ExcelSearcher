@@ -19,9 +19,9 @@
 
 class ImGuiManager : public Singleton<ImGuiManager>, public Scene
 {
-//====================================================================================
-//  ImGui 관련
-//====================================================================================
+    //====================================================================================
+    //  ImGui 관련
+    //====================================================================================
 public:
     void Init() override;
     void Release() override;
@@ -38,7 +38,7 @@ public:
     void SetupStyle();
 
 
-// 멤버 변수
+    // 멤버 변수
 public:
     const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일{.*}" }; // 파일 다이얼로그 설정
 
@@ -50,7 +50,7 @@ private:
     std::string currentKeyword; // 현재 검색중인 키워드
     std::vector<std::pair<std::string, std::string>> searchQueue; // 검색 대기(큐)
 
-// 상태 체크용
+    // 상태 체크용
 public:
     // main에서 isWindowOpen을 리턴받아 종료시점을 알기 위한 함수
     bool IsDone() const;
@@ -60,6 +60,7 @@ private:
     bool show_demo_window{ false }; // 데모 윈도우를 보여줄지 여부
     bool isWindowOpen{ true }; // 윈도우창이 켜져 되어있는지 여부
     bool isSearching{ false }; // 현재 검색이 진행중인지 여부
+    bool hasSearched{ false }; // 검색한 적이 있는지 여부
 
 
 

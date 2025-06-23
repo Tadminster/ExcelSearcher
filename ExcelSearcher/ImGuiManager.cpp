@@ -182,6 +182,7 @@ void ImGuiManager::Update()
         if (currentFileIndex > totalFilesCount)
         {
             isSearching = false;
+            hasSearched = true;
         }
     }
 
@@ -340,7 +341,7 @@ void ImGuiManager::Update()
 
         ImGui::Separator();
 
-
+        // 검색 결과가 있으면
         if (!searchResults.empty())
         {
             ImGui::Separator();
@@ -382,6 +383,11 @@ void ImGuiManager::Update()
             }
 
             ImGui::EndChild();
+        }
+        else if (hasSearched)
+        {
+            ImGui::Separator();
+            ImGui::Text(u8"검색 결과: 0개 일치");
         }
     }
     ImGui::End();
