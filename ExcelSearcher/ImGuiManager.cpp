@@ -124,7 +124,7 @@ void ImGuiManager::SetupImGuiContext(HWND hwnd, ID3D11Device* device, ID3D11Devi
     ImGui_ImplDX11_Init(device, deviceContext);
 
     // 뷰포트에 아이콘 설정
-    SetupWindowIconsForViewports(); 
+    SetupWindowIconsForViewports();
 }
 
 
@@ -162,6 +162,28 @@ void ImGuiManager::Update()
     // 데모 창 보기 (테스트용)
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+
+    // 검색 중이고 아직 처리할 파일이 남아 있다면 업데이트마다 검색되도록 처리
+    if (isSearching && currentFileIndex <= totalFilesCount)
+    {
+        // searchQueue에서 이번에 검색할 파일명과 경로를 가져옴
+        const auto& filePair = searchQueue[currentFileIndex - 1];
+        // 해당 엑셀 파일 내에서 키워드를 검색
+        SearchInExcelFile(currentKeyword, filePair);
+
+
+        // 처리된 파일 수 증가
+        currentFileIndex++;
+        // 진행도 계산 (0.0f ~ 1.0f 사이)
+        progressValue = static_cast<float>(currentFileIndex) / totalFilesCount;
+        progressValue = std::clamp(progressValue, 0.0f, 1.0f);
+
+        // 모든 파일 검색 완료 시 검색 종료
+        if (currentFileIndex > totalFilesCount)
+        {
+            isSearching = false;
+        }
+    }
 
     static char keywordBuffer[128];  // 검색어 입력 버퍼
     // 메인 창 시작
@@ -277,19 +299,47 @@ void ImGuiManager::Update()
         }
         ImGui::PopID();
 
-        // 검색 버튼
         ImGui::SameLine();
+        
+        // 검색
         if (ImGui::Button(u8"검색"))
         {
-            SearchInSelectedFiles(keywordBuffer);
+            // 선택된 파일 개수 초기화
+            totalFilesCount = selectedFiles.size();
+
+            if (StartSearch(keywordBuffer))
+            {
+                // 디버그용 (검색시작 알림, 키워드 버퍼 알림)
+                std::wcout << L" 검색을 시작합니다." << std::endl;
+                std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
+                std::wcout << L"검색어: " << wKeyword << std::endl;
+                std::wcout << L"===========================================" << wKeyword << std::endl;
+            }
+            // 선택된 파일이 없으면
+            else 
+            {
+                showProgressBar = false;
+                totalFilesCount = 0;
+                currentFileIndex = 0;
+                ImGui::OpenPopup(u8"파일 없음");
+            }
         }
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip(u8"검색하기\n입력된 단어를 검색하려면 이 버튼을 누르세요.");
         }
-        // -------------------------------------------------
+
+        // 진행도 표시
+        if (showProgressBar)
+        {
+            ImGui::SameLine();
+            ImGui::Text("%d / %d", currentFileIndex - 1, totalFilesCount);
+            ImGui::SameLine();
+            ImGui::ProgressBar(progressValue, ImVec2(-1, 0));
+        }
 
         ImGui::Separator();
+
 
         if (!searchResults.empty())
         {
@@ -339,7 +389,7 @@ void ImGuiManager::Update()
 
 void ImGuiManager::LateUpdate()
 {
-    
+
 }
 
 void ImGuiManager::Render()
@@ -355,11 +405,12 @@ void ImGuiManager::Render()
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+
 }
 
 void ImGuiManager::ResizeScreen()
 {
-    
+
 }
 
 void ImGuiManager::SetupStyle()
@@ -376,158 +427,175 @@ void ImGuiManager::SetupStyle()
     }
 }
 
+bool ImGuiManager::StartSearch(const std::string& keyword)
+{
+    // 키워드가 없거나, 선택된 파일이 없으면 false
+    if (keyword.empty() || selectedFiles.empty())
+        return false;
+
+    searchResults.clear();
+    totalFilesCount = selectedFiles.size();
+    currentFileIndex = 1;
+    progressValue = static_cast<float>(currentFileIndex) / static_cast<float>(currentFileIndex);
+    currentKeyword = keyword;
+    showProgressBar = true;
+    isSearching = true;
+
+    // 이전 검색큐를 비우고
+    searchQueue.clear();
+    // 선택된 파일을 순차 접근 가능한 벡터에 복사
+    for (const auto& pair : selectedFiles)
+        searchQueue.push_back(pair);
+
+    return true;
+}
+
 // ==========================================================================
 // 엑셀파일 내 특정 키워드를 검색하는 메인 처리 함수
 // ==========================================================================
-void ImGuiManager::SearchInSelectedFiles(const std::string& keyword)
+void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair<std::string, std::string>& filePair)
 {
     // 검색어가 없으면 리턴
     if (keyword.empty())
         return;
 
-    // 기존 검색 결과 초기화
-    searchResults.clear();
+    // 파일 이름과 경로 가져오기
+    const std::string& fileName = filePair.first;
+    const std::string& filePath = filePair.second;
 
-    // 선택된 모든 파일 반복
-    std::wstring wKeyword = SystemUtils::UTF8ToWString(keyword);
-    std::wcout << L"검색어: " << wKeyword << std::endl;
+    // 파일 이름과 경로 출력
+    std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
+    std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
+    std::wcout << L"===========================================" << std::endl;
+    std::wcout << L"파일 이름: " << wfileName << std::endl;
+    std::wcout << L"전체 경로: " << wfilePath << std::endl;
 
-    for (const auto& filePair : selectedFiles)
+    // 엑셀파일을 임시 디렉토리에 복사
+    std::string safePath = CopyExcelFile(filePath);
+
+    try
     {
-        // 파일 이름과 경로 가져오기
-        const std::string& fileName = filePair.first;
-        const std::string& filePath = filePair.second;
+        OpenXLSX::XLDocument doc;
 
-        // 파일 이름과 경로 출력
-        std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
-        std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
-        std::wcout << L"===========================================" << std::endl;
-        std::wcout << L"파일 이름: " << wfileName << std::endl;
-        std::wcout << L"전체 경로: " << wfilePath << std::endl;
+        // 엑셀 파일 열기
+        doc.open(safePath);
 
-        // 엑셀파일을 임시 디렉토리에 복사
-        std::string safePath = CopyExcelFile(filePath);
+        // 시트 개수 출력
+        int sheetcnt = doc.workbook().sheetCount();
+        std::wcout << L"시트 개수: " << sheetcnt << std::endl;
 
-        try
+        // 엑셀 문서 내의 모든 시트 반복
+        for (const auto& sheetName : doc.workbook().worksheetNames())
         {
-            OpenXLSX::XLDocument doc;
+            // 시트 이름 출력
+            std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
+            std::wcout << L"  ㄴ시트 이름: " << wSheetName;
 
-            // 엑셀 파일 열기
-            doc.open(safePath);
+            // 시트 객체 생성
+            OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
 
-            // 시트 개수 출력
-            int sheetcnt = doc.workbook().sheetCount();
-            std::wcout << L"시트 개수: " << sheetcnt << std::endl;
+            // 시트의 행과 열의 개수 출력
+            std::wcout << L" (" << sheet.rowCount() << L" * " << sheet.columnCount() << L")" << std::endl;
 
-            // 엑셀 문서 내의 모든 시트 반복
-            for (const auto& sheetName : doc.workbook().worksheetNames())
+            try
             {
-                // 시트 이름 출력
-                std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
-                std::wcout << L"  ㄴ시트 이름: " << wSheetName;
-
-                // 시트 객체 생성
-                OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
-
-                // 시트의 행과 열의 개수 출력
-                std::wcout << L" (" << sheet.rowCount() << L" * " << sheet.columnCount() << L")" << std::endl;
-
-                try
+                // 비어 있는 시트는 건너뜀
+                if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
                 {
-                    // 비어 있는 시트는 건너뜀
-                    if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
-                    {
-                        std::wcout << L"    ㄴ해당 시트는 비어 있어 건너뜁니다: " << std::endl;
-                        continue;
-                    }
+                    std::wcout << L"    ㄴ해당 시트는 비어 있어 건너뜁니다: " << std::endl;
+                    continue;
+                }
 
-                    // 셀의 개수가 비정상적으로 많으면 예외 발생 > fallback으로 대체
-                    if (sheet.rowCount() > 2000 || sheet.columnCount() > 2000)
-                    {
-                        std::wcout << L"    ㄴ해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다." << std::endl;
-                        //throw std::runtime_error("too large for range");
-                        continue;
-                    }
+                // 셀의 개수가 비정상적으로 많으면 예외 발생 > fallback으로 대체
+                if (sheet.rowCount() > 2000 || sheet.columnCount() > 2000)
+                {
+                    std::wcout << L"    ㄴ해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다." << std::endl;
+                    //throw std::runtime_error("too large for range");
+                    continue;
+                }
 
-                    // 시트 전체 범위를 가져오기
-                    OpenXLSX::XLCellRange range = sheet.range();
-                    auto first = range.topLeft();
-                    auto last = range.bottomRight();
+                // 시트 전체 범위를 가져오기
+                OpenXLSX::XLCellRange range = sheet.range();
+                auto first = range.topLeft();
+                auto last = range.bottomRight();
 
-                    // 셀 순회
-                    for (uint16_t row = first.row(); row <= last.row(); ++row)
+                // 셀 순회
+                for (uint16_t row = first.row(); row <= last.row(); ++row)
+                {
+                    for (uint16_t col = first.column(); col <= last.column(); ++col)
                     {
-                        for (uint16_t col = first.column(); col <= last.column(); ++col)
-                        {
-                            ProcessCell(sheet, fileName, sheetName, keyword, row, col);
-                        }
+                        ProcessCell(sheet, fileName, sheetName, keyword, row, col);
                     }
                 }
-                catch (const std::exception& ex)
+            }
+            catch (const std::exception& ex)
+            {
+                // 예외 발생 알림
+                std::wcout << L"range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
+
+                // 시트가 연속적으로 비어있을 때 스킵할 플래그 변수
+                bool bSkipSheet = false;
+
+                // fallback 처리
+                // 20 * 30 셀을 순회하며 검색, 100개 연속 빈 셀 탐지 시 스킵
+                const uint16_t maxRows = 20;
+                const uint16_t maxCols = 30;
+                const int maxConsecutiveEmptyCells = 100;
+
+                // 빈 셀 카운트를 저장할 변수
+                int emptyCellStack = 0;
+
+                // 셀 순회
+                for (uint16_t col = 1; col <= maxCols && !bSkipSheet; ++col)
                 {
-                    // 예외 발생 알림
-                    std::wcout << L"range() 실패: " << SystemUtils::UTF8ToWString(ex.what()) << std::endl;
-
-                    // 시트가 연속적으로 비어있을 때 스킵할 플래그 변수
-                    bool bSkipSheet = false;
-
-                    // fallback 처리
-                    // 20 * 30 셀을 순회하며 검색, 100개 연속 빈 셀 탐지 시 스킵
-                    const uint16_t maxRows = 20;
-                    const uint16_t maxCols = 30;
-                    const int maxConsecutiveEmptyCells = 100;
-
-                    // 빈 셀 카운트를 저장할 변수
-                    int emptyCellStack = 0;
-
-                    // 셀 순회
-                    for (uint16_t col = 1; col <= maxCols && !bSkipSheet; ++col)
+                    for (uint16_t row = 1; row <= maxRows; ++row)
                     {
-                        for (uint16_t row = 1; row <= maxRows; ++row)
+                        bool hasValue = ProcessCell(sheet, fileName, sheetName, keyword, row, col);
+
+                        // 빈 셀이면
+                        if (!hasValue)
                         {
-                            bool hasValue = ProcessCell(sheet, fileName, sheetName, keyword, row, col);
+                            // 빈 셀 카운트 증가
+                            emptyCellStack++;
 
-                            // 빈 셀이면
-                            if (!hasValue)
+                            // 연속 빈 셀 카운트가 최대값에 도달하면 스킵
+                            if (emptyCellStack >= maxConsecutiveEmptyCells)
                             {
-                                // 빈 셀 카운트 증가
-                                emptyCellStack++;
+                                std::wcout << L"연속으로 "
+                                    << maxConsecutiveEmptyCells
+                                    << L"개의 빈 셀이 탐지되어 시트를 스킵합니다." << std::endl;
 
-                                // 연속 빈 셀 카운트가 최대값에 도달하면 스킵
-                                if (emptyCellStack >= maxConsecutiveEmptyCells)
-                                {
-                                    std::wcout << L"연속으로 "
-                                        << maxConsecutiveEmptyCells
-                                        << L"개의 빈 셀이 탐지되어 시트를 스킵합니다." << std::endl;
-
-                                    bSkipSheet = true; // 바깥쪽 반복문 종료
-                                    break; // 안쪽 반복문 종료
-                                }
+                                bSkipSheet = true; // 바깥쪽 반복문 종료
+                                break; // 안쪽 반복문 종료
                             }
-                            else
-                            {
-                                // 유효셀을 찾았으면 빈 셀 카운트 초기화
-                                emptyCellStack = 0;
-                            }
+                        }
+                        else
+                        {
+                            // 유효셀을 찾았으면 빈 셀 카운트 초기화
+                            emptyCellStack = 0;
                         }
                     }
                 }
             }
-
-            std::wcout << std::endl << wfileName << L" 검색 완료. 문서를 닫습니다." << std::endl;
-
-
-            // 엑셀 문서 닫기
-            doc.close();
         }
-        catch (const std::exception& ex)
-        {
-            // 예외 발생 시 알림
-            std::wcout << L"\n파일: " << wfilePath << std::endl;
-            std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
-            std::wcout << L"사유: " << wErr << std::endl;
-        }
+
+        std::wcout << std::endl << wfileName << L" 검색 완료. 문서를 닫습니다." << std::endl;
+
+
+        // 엑셀 문서 닫기
+        doc.close();
     }
+    catch (const std::exception& ex)
+    {
+        // 예외 발생 시 알림
+        std::wcout << L"\n파일: " << wfilePath << std::endl;
+        std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
+        std::wcout << L"사유: " << wErr << std::endl;
+    }
+
+    // 진행도 업데이트
+    currentFileIndex++;
+    progressValue = static_cast<float>(currentFileIndex) / static_cast<float>(totalFilesCount);
 }
 
 // ==========================================================================
