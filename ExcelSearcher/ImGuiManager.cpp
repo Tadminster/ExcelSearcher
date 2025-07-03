@@ -164,13 +164,12 @@ void ImGuiManager::Update()
         ImGui::ShowDemoWindow(&show_demo_window);
 
     // 검색 중이고 아직 처리할 파일이 남아 있다면 업데이트마다 검색되도록 처리
-    if (isSearching && currentFileIndex <= totalFilesCount)
+    if (isSearching)
     {
         // searchQueue에서 이번에 검색할 파일명과 경로를 가져옴
         const auto& filePair = searchQueue[currentFileIndex - 1];
         // 해당 엑셀 파일 내에서 키워드를 검색
         SearchInExcelFile(currentKeyword, filePair);
-
 
         // 처리된 파일 수 증가
         currentFileIndex++;
@@ -307,22 +306,17 @@ void ImGuiManager::Update()
         {
             // 선택된 파일 개수 초기화
             totalFilesCount = selectedFiles.size();
-
-            if (StartSearch(keywordBuffer))
-            {
-                // 디버그용 (검색시작 알림, 키워드 버퍼 알림)
-                std::wcout << L" 검색을 시작합니다." << std::endl;
-                std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
-                std::wcout << L"검색어: " << wKeyword << std::endl;
-                std::wcout << L"===========================================" << wKeyword << std::endl;
-            }
-            // 선택된 파일이 없으면
-            else 
+            if (totalFilesCount < 1)
             {
                 showProgressBar = false;
                 totalFilesCount = 0;
                 currentFileIndex = 0;
-                ImGui::OpenPopup(u8"파일 없음");
+            }
+            else if (StartSearch(keywordBuffer))
+            {
+                // 디버그용 (검색시작 알림, 키워드 버퍼 알림)
+                std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
+                std::wcout << L"검색을 시작합니다: " << wKeyword << std::endl;
             }
         }
         if (ImGui::IsItemHovered())
@@ -461,6 +455,7 @@ bool ImGuiManager::StartSearch(const std::string& keyword)
 // ==========================================================================
 void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair<std::string, std::string>& filePair)
 {
+
     // 검색어가 없으면 리턴
     if (keyword.empty())
         return;
@@ -472,7 +467,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
     // 파일 이름과 경로 출력
     std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
     std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
-    std::wcout << L"===========================================" << std::endl;
+    std::wcout << L"===========================================" << currentFileIndex << std::endl;
     std::wcout << L"파일 이름: " << wfileName << std::endl;
     std::wcout << L"전체 경로: " << wfilePath << std::endl;
 
@@ -598,10 +593,6 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
         std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
         std::wcout << L"사유: " << wErr << std::endl;
     }
-
-    // 진행도 업데이트
-    currentFileIndex++;
-    progressValue = static_cast<float>(currentFileIndex) / static_cast<float>(totalFilesCount);
 }
 
 // ==========================================================================
