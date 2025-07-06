@@ -12,7 +12,6 @@ Excel Searcher는 C++로 제작된 데스크탑 애플리케이션으로, 여러
 - ✅ **검색 결과 테이블 뷰**
 - ✅ **Unicode/Korean 텍스트 완전 지원**
 - ✅ **직관적인 ImGui 기반 사용자 인터페이스**
-- ✅ **ImGuiFileDialog로 다중 파일 선택 지원**
 
 ---
 
@@ -21,8 +20,6 @@ Excel Searcher는 C++로 제작된 데스크탑 애플리케이션으로, 여러
 - **C++17**
 - [Dear ImGui](https://github.com/ocornut/imgui)  
 - [ImGuiFileDialog](https://github.com/aiekick/ImGuiFileDialog)  
-- [OpenXLSX](https://github.com/troldal/OpenXLSX)  
-- [pugixml](https://github.com/zeux/pugixml) (OpenXLSX 내부 XML 처리)
-- [Zippy](https://github.com/kuba--/zip) (OpenXLSX 내부 Zip 처리)
+- [OpenXLSX](https://github.com/troldal/OpenXLSX)
 
 ---
