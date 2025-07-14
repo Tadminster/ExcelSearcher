@@ -1,4 +1,4 @@
-[![설명 동영상](https://img.youtube.com/vi/2CHA3Q_Qs)]
+(https://www.youtube.com/watch?v=2CHA3Q_Qs8U)
 
 # Excel Searcher
 
