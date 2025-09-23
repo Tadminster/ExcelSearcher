@@ -1,4 +1,4 @@
-[![설명 동영상](https://img.youtube.com/vi/2CHA3Q_Qs)]
+![ExcelSearcher](https://github.com/user-attachments/assets/9031d533-e960-47db-a63a-cc2777661b44)
 
 # Excel Searcher
 
