@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <optional>
 
 // 외부 라이브러리 헤더
 #include <imgui.h>
@@ -15,6 +16,7 @@
 // 프로젝트 내부 헤더
 #include "Types.h"
 #include "ExcelSearchResult.h"
+
 
 
 class ImGuiManager : public Singleton<ImGuiManager>, public Scene
@@ -38,12 +40,14 @@ public:
     void SetupStyle();
 
 
-    // 멤버 변수
+    //====================================================================================
+    //  멤버 변수들
+    //====================================================================================
 public:
     const char* filters{ "엑셀 파일 (*.xlsx){.xlsx},모든 파일{.*}" }; // 파일 다이얼로그 설정
 
     // 외부 접근이 필요한 데이터
-    std::map<std::string, std::string> selectedFiles;        // 파일명, 경로
+    std::map<std::string, std::string> selectedFiles;        // 선택된 파일명, 경로
     std::vector<ExcelSearchResult> searchResults;            // 검색 결과 리스트
 
 private:
@@ -72,14 +76,17 @@ private:
     void SearchInExcelFile(const std::string& keyword, const std::pair<std::string, std::string>& filePair);  // 선택된 엑셀 파일에서 검색
     std::string CopyExcelFile(const std::string& originalPath); // 엑셀 파일 복사
     bool ProcessCell(OpenXLSX::XLWorksheet& sheet, const std::string& fileName, const std::string& sheetName, const std::string& keyword, uint16_t row, uint16_t col);
+    std::string GetCellText(OpenXLSX::XLWorksheet& sheet, OpenXLSX::XLCellReference); // 셀의 텍스트 값을 문자열로 변환
+    std::vector<std::string> GetFullRowData(OpenXLSX::XLWorksheet& sheet, uint16_t col, uint16_t maxRow = 100); // 특정 행의 전체 데이터 가져오기
+
 
 //====================================================================================
 //  Progress Bar
 //====================================================================================
 private:
     bool showProgressBar{ false };  // 진행바 표시 여부
+    float progressValue{ 0.0f };    // 0.0f ~ 1.0f 범위
     int currentFileIndex{ 0 };      // 현재 처리 중인 파일 인덱스
     int totalFilesCount{ 0 };       // 총 파일 수
-    float progressValue{ 0.0f };    // 0.0f ~ 1.0f 범위
 
 };

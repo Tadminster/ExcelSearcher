@@ -22,5 +22,7 @@ public:
 
     // ASCII 문자열 검사
     static bool IsAscii(const std::string& str);
-private:
+
+    // 문자열 공백 제거
+    static std::string Trim(const std::string& str);
 };

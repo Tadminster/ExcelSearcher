@@ -32,6 +32,16 @@ bool SystemUtils::IsAscii(const std::string& str)
     return true;
 }
 
+std::string SystemUtils::Trim(const std::string& str)
+{
+    const char* ws = " \t\r\n";
+    auto a = str.find_first_not_of(ws);
+    auto b = str.find_last_not_of(ws);
+    if (a == std::string::npos) return {};
+
+    return str.substr(a, b - a + 1);
+}
+
 std::string SystemUtils::GetKnownFolder(REFKNOWNFOLDERID folderId)
 {
     PWSTR path = nullptr;
