@@ -162,6 +162,7 @@
     <ClInclude Include="ExcelSearchResult.h" />
     <ClInclude Include="IconsFontAwesome6.h" />
     <ClInclude Include="ImGuiManager.h" />
+    <ClInclude Include="SearchOptionsWindow.h" />
     <ClInclude Include="SystemUtils.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
@@ -199,6 +200,7 @@
     <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp" />
     <ClCompile Include="ImGuiManager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SearchOptionsWindow.cpp" />
     <ClCompile Include="SystemUtils.cpp" />
   </ItemGroup>
   <ItemGroup>

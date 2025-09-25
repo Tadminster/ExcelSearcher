@@ -16,6 +16,7 @@
 // 프로젝트 내부 헤더
 #include "Types.h"
 #include "ExcelSearchResult.h"
+#include "SearchOptionsWindow.h"
 
 
 
@@ -53,6 +54,7 @@ public:
 private:
     std::string currentKeyword; // 현재 검색중인 키워드
     std::vector<std::pair<std::string, std::string>> searchQueue; // 검색 대기(큐)
+    class SearchOptionsWindow GSearchOptionsUI;
 
     // 상태 체크용
 public:

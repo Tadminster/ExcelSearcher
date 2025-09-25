@@ -198,6 +198,10 @@ void ImGuiManager::Update()
             config.countSelectionMax = 0;   // 다중 선택
             ImGuiFileDialog::Instance()->OpenDialog("FileOpenDialog", u8"파일 선택", filters, config);
         }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(u8"파일 열기\n검색할 엑셀 파일을 선택하려면 이 버튼을 누르세요.");
+        }
 
         // 파일 선택기 표시
         if (ImGuiFileDialog::Instance()->Display("FileOpenDialog"))
@@ -324,6 +328,36 @@ void ImGuiManager::Update()
             ImGui::SetTooltip(u8"검색하기\n입력된 단어를 검색하려면 이 버튼을 누르세요.");
         }
 
+        // 검색옵션
+        ImGui::SameLine();
+
+        if (ImGui::Button(ICON_FA_GEAR))
+        {
+            GSearchOptionsUI.Open();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(u8"검색 옵션 설정\n검색 옵션을 설정하려면 이 버튼을 누르세요.");
+        }
+
+        static bool bInit = false;
+        if (!bInit)
+        {
+            GSearchOptionsUI.SetOnApply([](const FSearchOptions& Opt)
+                {
+                    // 여기서 사용 중인 검색 시스템/미리보기 패널/디버그 표시 등에 옵션 반영
+                    // 예)
+                    // SearchEngine::Get().SetCaseSensitive(Opt.bCaseSensitive);
+                    // PreviewPanel::Get().SetEnabled(Opt.bEnablePreview);
+                    // DebugOverlay::Get().SetVisible(Opt.bShowDebugOverlay);
+                    // ...
+                });
+            bInit = true;
+        }
+
+        // 3) 프레임마다 Draw() 호출 (열려 있을 때만 그려짐)
+        GSearchOptionsUI.Draw();
+
         // 진행도 표시
         if (showProgressBar)
         {
@@ -332,34 +366,6 @@ void ImGuiManager::Update()
             ImGui::SameLine();
             ImGui::ProgressBar(progressValue, ImVec2(-1, 0));
         }
-
-
-        // 추가 검색 정보 테스트
-        {
-            //static std::vector<std::string> g_SelectedFields;    // 이번 검색에 표시할 필드(라벨)
-            //static std::vector<std::string> g_AvailableFields = { "부서", "사명", "직책", "전화" }; // 프리셋 예시
-            //static char g_AdhocBuf[128] = "";
-
-            //ImGui::Separator();
-            //ImGui::TextUnformatted(u8"추가 검색옵션:");
-            //ImGui::SameLine();
-
-            //if (ImGui::BeginCombo("##fld_combo", u8"필드 선택…")) {
-            //    for (auto& name : g_AvailableFields) {
-            //        bool selected = std::find(g_SelectedFields.begin(), g_SelectedFields.end(), name) != g_SelectedFields.end();
-            //        if (ImGui::Selectable(name.c_str(), selected)) {
-            //            if (selected) {
-            //                g_SelectedFields.erase(std::remove(g_SelectedFields.begin(), g_SelectedFields.end(), name), g_SelectedFields.end());
-            //            }
-            //            else {
-            //                g_SelectedFields.push_back(name);
-            //            }
-            //        }
-            //    }
-            //    ImGui::EndCombo();
-            //}
-        }
-
 
         ImGui::Separator();
 
@@ -375,7 +381,7 @@ void ImGuiManager::Update()
             ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
             ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
 
-            // 표 시작 (4열)
+            // 표 시작 (5열)
             if (ImGui::BeginTable("ResultTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
             {
                 // 헤더 행
@@ -423,23 +429,25 @@ void ImGuiManager::Update()
                         }
                         else
                         {
-                            static const float kMaxCellWidth = 400.0f;  // 값 하나가 차지할 최대 가로폭
+                            // 값 하나가 차지할 최대 가로폭
+                            static const float maxCellWidth = 400.0f;  
 
                             bool first = true;
                             for (const auto& text : result.fullRowData)
                             {
                                 if (text.empty()) continue;
 
-                                if (!first) {
+                                if (!first)
+                                {
                                     ImGui::SameLine(0.0f, 8.0f);
-                                    ImGui::TextDisabled("|");            // 구분자
+                                    ImGui::TextDisabled("|");            // column 구분자
                                     ImGui::SameLine(0.0f, 8.0f);
                                 }
                                 first = false;
 
                                 // 현재 커서 X + 최대폭 지점에서 자동 줄바꿈
                                 const float startX = ImGui::GetCursorPosX();
-                                ImGui::PushTextWrapPos(startX + kMaxCellWidth);
+                                ImGui::PushTextWrapPos(startX + maxCellWidth);
                                 ImGui::TextUnformatted(text.c_str());
                                 ImGui::PopTextWrapPos();
                             }
@@ -447,7 +455,7 @@ void ImGuiManager::Update()
 
                         ImGui::EndChild();
 
-                        // 복사
+                        // copy btn
                         if (ImGui::Button(u8"복사"))
                         {
                             std::string buf; buf.reserve(4096);
@@ -468,7 +476,7 @@ void ImGuiManager::Update()
 
                         ImGui::SameLine();
 
-                        // 닫기
+                        // close btn
                         if (ImGui::Button(u8"닫기")) ImGui::CloseCurrentPopup();
                         if (ImGui::IsItemHovered())
                         {
@@ -478,17 +486,21 @@ void ImGuiManager::Update()
                         ImGui::EndPopup();
                     }
 
-                    ImGui::PopID(); // ★ 반드시!
+                    ImGui::PopID();
 
+                    // 2열: 파일명
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Text("%s", result.fileName.c_str());
 
+                    // 3열: 시트명
                     ImGui::TableSetColumnIndex(2);
                     ImGui::Text("%s", result.sheetName.c_str());
 
+                    // 4열: 위치 (셀 주소)
                     ImGui::TableSetColumnIndex(3);
                     ImGui::Text("%s", result.cellAddress.c_str());
 
+                    // 5열: 셀 내용
                     ImGui::TableSetColumnIndex(4);
                     ImGui::TextWrapped("%s", result.cellValue.c_str());
                 }
@@ -538,8 +550,26 @@ void ImGuiManager::SetupStyle()
     // 스타일 설정
     ImGui::StyleColorsDark();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-
     ImGuiStyle& style = ImGui::GetStyle();
+
+    // 커스텀 컬러 설정
+    ImVec4* colors = style.Colors;
+
+    // 기본
+    /*기본*/colors[ImGuiCol_Tab] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);         // 어두운 회색
+    /*호버*/colors[ImGuiCol_TabHovered] = ImVec4(0.30f, 0.50f, 0.90f, 1.0f);  // 밝은 파랑
+    /*활성*/colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.40f, 0.85f, 1.0f);   // 진한 파랑
+    // 포커스 잃은 탭들
+    colors[ImGuiCol_TabUnfocused] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.18f, 0.30f, 0.55f, 1.0f);
+
+    // 테두리/라운딩으로 시각적 구분 더 강화
+    style.TabRounding = 6.0f;   // 탭 코너 둥글게
+    style.TabBorderSize = 1.0f;   // 탭 경계선 두께
+    style.FrameBorderSize = 1.0f;   // 프레임 경계선(탭 바 아래 라인 포함)
+    //colors[ImGuiCol_Border] = ImVec4(0.18f, 0.45f, 0.90f, 0.80f); // 탭 테두리 색
+
+
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;

@@ -36,6 +36,9 @@
     <ClInclude Include="SystemUtils.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="SearchOptionsWindow.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -138,6 +141,9 @@
       <Filter>OpenXLSX</Filter>
     </ClCompile>
     <ClCompile Include="SystemUtils.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="SearchOptionsWindow.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
