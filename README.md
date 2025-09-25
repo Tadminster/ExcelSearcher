@@ -28,3 +28,9 @@ Excel Searcher는 C++로 제작된 데스크탑 애플리케이션으로,
 - [OpenXLSX](https://github.com/troldal/OpenXLSX)
 
 ---
+
+## 리소스
+- [Font Awesome 6](https://fontawesome.com/) (아이콘 폰트)
+- [Noto Sans KR](https://fonts.google.com/noto/specimen/Noto+Sans+KR) (한글 폰트)
+
+---
