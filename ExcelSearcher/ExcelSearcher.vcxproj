@@ -152,13 +152,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)/Lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\backends\ImGuiFileDialog.h" />
     <ClInclude Include="..\backends\ImGuiFileDialogConfig.h" />
     <ClInclude Include="..\ThirdParty\OpenXLSX\sources\XLUtilities.hpp" />
+    <ClInclude Include="DebugLogWindow.h" />
     <ClInclude Include="ExcelSearchResult.h" />
     <ClInclude Include="IconsFontAwesome6.h" />
     <ClInclude Include="ImGuiManager.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlFile.cpp" />
     <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLXmlParser.cpp" />
     <ClCompile Include="..\ThirdParty\OpenXLSX\sources\XLZipArchive.cpp" />
+    <ClCompile Include="DebugLogWindow.cpp" />
     <ClCompile Include="ImGuiManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SearchOptionsWindow.cpp" />

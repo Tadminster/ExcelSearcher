@@ -298,7 +298,7 @@ void ImGuiManager::Update()
             (
                 cursorPos,
                 ImColor(150, 150, 150, 255),
-                u8"검색어를 입력하세요."
+                u8" 검색어를 입력하세요."
             );
         }
         ImGui::PopID();
@@ -308,6 +308,16 @@ void ImGuiManager::Update()
         // 검색
         if (ImGui::Button(u8"검색"))
         {
+            // 검색 옵션 캐시 갱신
+            const auto& Opt = SearchOptionsUI.Get();
+            CachedView.bEnablePreview = Opt.bEnablePreview;
+            CachedView.bShowFilePath = Opt.bShowFileName;
+            CachedView.bShowSheetName = Opt.bShowSheetName;
+            CachedView.bShowCellAddress = Opt.bShowCellAddress;
+            CachedView.bShowSnippet = Opt.bShowSnippet;
+
+            CachedView.ColumnCount = SearchOptionsUI.GetMetaColumnCount();
+
             // 선택된 파일 개수 초기화
             totalFilesCount = selectedFiles.size();
             if (totalFilesCount < 1)
@@ -320,7 +330,11 @@ void ImGuiManager::Update()
             {
                 // 디버그용 (검색시작 알림, 키워드 버퍼 알림)
                 std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
-                std::wcout << L"검색을 시작합니다: " << wKeyword << std::endl;
+                if (SearchOptionsUI.Get().bShowDebugOverlay)
+                {
+                    DebugLogUI.Add(L"검색을 시작합니다: " + wKeyword, LogLevel::Info);
+                }
+                //std::wcout << L"검색을 시작합니다: " << wKeyword << std::endl;
             }
         }
         if (ImGui::IsItemHovered())
@@ -333,7 +347,7 @@ void ImGuiManager::Update()
 
         if (ImGui::Button(ICON_FA_GEAR))
         {
-            GSearchOptionsUI.Open();
+            SearchOptionsUI.Open();
         }
         if (ImGui::IsItemHovered())
         {
@@ -343,7 +357,7 @@ void ImGuiManager::Update()
         static bool bInit = false;
         if (!bInit)
         {
-            GSearchOptionsUI.SetOnApply([](const FSearchOptions& Opt)
+            SearchOptionsUI.SetOnApply([](const FSearchOptions& Opt)
                 {
                     // 여기서 사용 중인 검색 시스템/미리보기 패널/디버그 표시 등에 옵션 반영
                     // 예)
@@ -355,8 +369,8 @@ void ImGuiManager::Update()
             bInit = true;
         }
 
-        // 3) 프레임마다 Draw() 호출 (열려 있을 때만 그려짐)
-        GSearchOptionsUI.Draw();
+
+        SearchOptionsUI.Draw();
 
         // 진행도 표시
         if (showProgressBar)
@@ -382,14 +396,14 @@ void ImGuiManager::Update()
             ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
 
             // 표 시작 (5열)
-            if (ImGui::BeginTable("ResultTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
+            if (ImGui::BeginTable("ResultTable", CachedView.ColumnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
             {
                 // 헤더 행
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
+                if (CachedView.bEnablePreview) ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+                if (CachedView.bShowFilePath) ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch);
+                if (CachedView.bShowSheetName) ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthFixed);
+                if (CachedView.bShowCellAddress) ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthFixed);
+                if (CachedView.bShowSnippet) ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableHeadersRow();
 
                 // 결과 출력 영역
@@ -397,112 +411,128 @@ void ImGuiManager::Update()
                 {
                     ImGui::TableNextRow();
 
-                    // 1열: 미리보기 버튼
-                    ImGui::TableSetColumnIndex(0);
-
-                    // 행마다 고유한 팝업 ID 부여 (ID 충돌 방지)
-                    ImGui::PushID(&result);
-
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 2));
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.80f, 1));
-                    bool open = ImGui::SmallButton(ICON_FA_EYE);
-                    ImGui::PopStyleColor();
-                    ImGui::PopStyleVar();
-
-                    // 팝업 열기
-                    if (open) ImGui::OpenPopup("row_preview");
-                    if (ImGui::BeginPopup("row_preview"))
+                    if (CachedView.bEnablePreview)
                     {
-                        // 메타
-                        ImGui::Text("%s | %s | %s",
-                            result.fileName.c_str(),
-                            result.sheetName.c_str(),
-                            result.cellAddress.c_str());
-                        ImGui::Separator();
+                        // 1열: 미리보기 버튼
+                        //ImGui::TableSetColumnIndex(ColumnIndex++);
+                        ImGui::TableNextColumn();
 
-                        // 스크롤 가능한 본문
-                        ImGui::BeginChild("row_tip", ImVec2(800, 100), true, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
+                        // 행마다 고유한 팝업 ID 부여 (ID 충돌 방지)
+                        ImGui::PushID(&result);
 
-                        if (result.fullRowData.empty())
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 2));
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.80f, 1));
+                        bool open = ImGui::SmallButton(ICON_FA_EYE);
+                        ImGui::PopStyleColor();
+                        ImGui::PopStyleVar();
+
+                        // 팝업 열기
+                        if (open) ImGui::OpenPopup("row_preview");
+                        if (ImGui::BeginPopup("row_preview"))
                         {
-                            ImGui::TextUnformatted(u8"(표시할 값이 없습니다)");
-                        }
-                        else
-                        {
-                            // 값 하나가 차지할 최대 가로폭
-                            static const float maxCellWidth = 400.0f;  
+                            // 메타
+                            ImGui::Text("%s | %s | %s",
+                                result.fileName.c_str(),
+                                result.sheetName.c_str(),
+                                result.cellAddress.c_str());
+                            ImGui::Separator();
 
-                            bool first = true;
-                            for (const auto& text : result.fullRowData)
+                            // 스크롤 가능한 본문
+                            ImGui::BeginChild("row_tip", ImVec2(800, 100), true, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
+
+                            if (result.fullRowData.empty())
                             {
-                                if (text.empty()) continue;
+                                ImGui::TextUnformatted(u8"(표시할 값이 없습니다)");
+                            }
+                            else
+                            {
+                                // 값 하나가 차지할 최대 가로폭
+                                static const float maxCellWidth = 400.0f;
 
-                                if (!first)
+                                bool first = true;
+                                for (const auto& text : result.fullRowData)
                                 {
-                                    ImGui::SameLine(0.0f, 8.0f);
-                                    ImGui::TextDisabled("|");            // column 구분자
-                                    ImGui::SameLine(0.0f, 8.0f);
+                                    if (text.empty()) continue;
+
+                                    if (!first)
+                                    {
+                                        ImGui::SameLine(0.0f, 8.0f);
+                                        ImGui::TextDisabled("|");            // column 구분자
+                                        ImGui::SameLine(0.0f, 8.0f);
+                                    }
+                                    first = false;
+
+                                    // 현재 커서 X + 최대폭 지점에서 자동 줄바꿈
+                                    const float startX = ImGui::GetCursorPosX();
+                                    ImGui::PushTextWrapPos(startX + maxCellWidth);
+                                    ImGui::TextUnformatted(text.c_str());
+                                    ImGui::PopTextWrapPos();
                                 }
-                                first = false;
-
-                                // 현재 커서 X + 최대폭 지점에서 자동 줄바꿈
-                                const float startX = ImGui::GetCursorPosX();
-                                ImGui::PushTextWrapPos(startX + maxCellWidth);
-                                ImGui::TextUnformatted(text.c_str());
-                                ImGui::PopTextWrapPos();
                             }
-                        }
 
-                        ImGui::EndChild();
+                            ImGui::EndChild();
 
-                        // copy btn
-                        if (ImGui::Button(u8"복사"))
-                        {
-                            std::string buf; buf.reserve(4096);
-                            for (size_t c = 0; c < result.fullRowData.size(); ++c)
+                            // copy btn
+                            if (ImGui::Button(u8"복사"))
                             {
-                                const auto& v = result.fullRowData[c];
-                                if (v.empty()) continue;
+                                std::string buf; buf.reserve(4096);
+                                for (size_t c = 0; c < result.fullRowData.size(); ++c)
+                                {
+                                    const auto& v = result.fullRowData[c];
+                                    if (v.empty()) continue;
 
-                                buf += v;
-                               buf += '\n';
+                                    buf += v;
+                                    buf += '\n';
+                                }
+                                ImGui::SetClipboardText(buf.c_str());
                             }
-                            ImGui::SetClipboardText(buf.c_str());
-                        }
-                        if (ImGui::IsItemHovered())
-                        {
-                            ImGui::SetTooltip(u8"클립보드에 복사합니다.");
+                            if (ImGui::IsItemHovered())
+                            {
+                                ImGui::SetTooltip(u8"클립보드에 복사합니다.");
+                            }
+
+                            ImGui::SameLine();
+
+                            // close btn
+                            if (ImGui::Button(u8"닫기")) ImGui::CloseCurrentPopup();
+                            if (ImGui::IsItemHovered())
+                            {
+                                ImGui::SetTooltip(u8"팝업 닫기");
+                            }
+
+                            ImGui::EndPopup();
                         }
 
-                        ImGui::SameLine();
-
-                        // close btn
-                        if (ImGui::Button(u8"닫기")) ImGui::CloseCurrentPopup();
-                        if (ImGui::IsItemHovered())
-                        {
-                            ImGui::SetTooltip(u8"팝업 닫기");
-                        }
-
-                        ImGui::EndPopup();
+                        ImGui::PopID();
                     }
 
-                    ImGui::PopID();
+                    if (CachedView.bShowFilePath)
+                    {
+                        // 파일명
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", result.fileName.c_str());
+                    }
 
-                    // 2열: 파일명
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::Text("%s", result.fileName.c_str());
+                    if (CachedView.bShowSheetName)
+                    {
+                        // 시트명
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", result.sheetName.c_str());
+                    }
 
-                    // 3열: 시트명
-                    ImGui::TableSetColumnIndex(2);
-                    ImGui::Text("%s", result.sheetName.c_str());
+                    if (CachedView.bShowCellAddress)
+                    {
+                        // 위치 (셀 주소)
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", result.cellAddress.c_str());
+                    }
 
-                    // 4열: 위치 (셀 주소)
-                    ImGui::TableSetColumnIndex(3);
-                    ImGui::Text("%s", result.cellAddress.c_str());
-
-                    // 5열: 셀 내용
-                    ImGui::TableSetColumnIndex(4);
-                    ImGui::TextWrapped("%s", result.cellValue.c_str());
+                    if (CachedView.bShowSnippet)
+                    {
+                        // 셀 내용
+                        ImGui::TableNextColumn();
+                        ImGui::TextWrapped("%s", result.cellValue.c_str());
+                    }
                 }
 
                 ImGui::EndTable();
@@ -517,6 +547,23 @@ void ImGuiManager::Update()
         }
     }
     ImGui::End();
+
+    // 🔹 디버그 오버레이: 옵션이 켜져 있으면 그리기
+    if (SearchOptionsUI.Get().bShowDebugOverlay) // 옵션 플래그 기준
+    {
+        static bool open = true;
+        DebugLogUI.DrawWindow(&open);
+
+        // 사용자가 X로 닫으면 옵션과 동기화(선택)
+        if (!open)
+        {
+            open = false;
+            // SearchOptionsUI에 setter가 있으면 쓰고, 없으면 멤버 접근 방식에 맞춰 반영
+            // SearchOptionsUI.SetShowDebugOverlay(false);
+            // 또는 내부 참조를 반환하는 API가 있다면 활용:
+            // SearchOptionsUI.GetMutable().bShowDebugOverlay = false;
+        }
+    }
 }
 
 void ImGuiManager::LateUpdate()
@@ -605,7 +652,6 @@ bool ImGuiManager::StartSearch(const std::string& keyword)
 // ==========================================================================
 void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair<std::string, std::string>& filePair)
 {
-
     // 검색어가 없으면 리턴
     if (keyword.empty())
         return;
@@ -614,12 +660,19 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
     const std::string& fileName = filePair.first;
     const std::string& filePath = filePair.second;
 
-    // 파일 이름과 경로 출력
+    // 파일 이름과 경로를 wstring으로 변환 (debug 출력용)
     std::wstring wfileName = SystemUtils::UTF8ToWString(fileName);
     std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
-    std::wcout << L"===========================================" << currentFileIndex << std::endl;
-    std::wcout << L"파일 이름: " << wfileName << std::endl;
-    std::wcout << L"전체 경로: " << wfilePath << std::endl;
+
+    // 디버그용 검색옵션 bool 가져오기
+    bool bShowDebugLog = SearchOptionsUI.Get().bShowDebugOverlay;
+
+    if (bShowDebugLog)
+    {
+        DebugLogUI.Add(L"===========================================", LogLevel::Separator);
+        DebugLogUI.Add(L"파일 이름: " + wfileName, LogLevel::File);
+        DebugLogUI.Add(L"전체 경로: " + wfilePath, LogLevel::File);
+    }
 
     // 엑셀파일을 임시 디렉토리에 복사
     std::string safePath = CopyExcelFile(filePath);
@@ -632,35 +685,50 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
         doc.open(safePath);
 
         // 시트 개수 출력
-        int sheetcnt = doc.workbook().sheetCount();
-        std::wcout << L"시트 개수: " << sheetcnt << std::endl;
+        if (bShowDebugLog)
+        {
+            int sheetcnt = doc.workbook().sheetCount();
+            DebugLogUI.AddFmt(LogLevel::File, L"시트 개수: %d", sheetcnt);
+        }
+        //std::wcout << L"시트 개수: " << sheetcnt << std::endl;
 
         // 엑셀 문서 내의 모든 시트 반복
         for (const auto& sheetName : doc.workbook().worksheetNames())
         {
-            // 시트 이름 출력
-            std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
-            std::wcout << L"  ㄴ시트 이름: " << wSheetName;
-
             // 시트 객체 생성
             OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
+            std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
 
-            // 시트의 행과 열의 개수 출력
-            std::wcout << L" (" << sheet.rowCount() << L" * " << sheet.columnCount() << L")" << std::endl;
+            // 시트 이름/행열 개수 출력
+            if (bShowDebugLog)
+            {
+
+                DebugLogUI.AddFmt(LogLevel::Sheet, L"시트: %ls  [rows %d] * [cols %d]",
+                    wSheetName.c_str(), sheet.rowCount(), sheet.columnCount());
+
+            }
 
             try
             {
                 // 비어 있는 시트는 건너뜀
                 if (sheet.rowCount() == 0 || sheet.columnCount() == 0)
                 {
-                    std::wcout << L"    ㄴ해당 시트는 비어 있어 건너뜁니다: " << std::endl;
+                    if (bShowDebugLog)
+                    {
+                        DebugLogUI.Add(L"해당 시트는 비어 있어 건너뜁니다: " + wSheetName, LogLevel::Error);
+                    }
+
                     continue;
                 }
 
                 // 셀의 개수가 비정상적으로 많으면 예외 발생 > fallback으로 대체
                 if (sheet.rowCount() > 2000 || sheet.columnCount() > 2000)
                 {
-                    std::wcout << L"    ㄴ해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다." << std::endl;
+                    if (bShowDebugLog)
+                    {
+                        DebugLogUI.Add(L"해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다: " + wSheetName, LogLevel::Error);
+                    }
+
                     //throw std::runtime_error("too large for range");
                     continue;
                 }
@@ -730,8 +798,10 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
             }
         }
 
-        std::wcout << std::endl << wfileName << L" 검색 완료. 문서를 닫습니다." << std::endl;
-
+        if (bShowDebugLog)
+        {
+            DebugLogUI.Add(L"검색 완료. 문서를 닫습니다.", LogLevel::Info);
+        }
 
         // 엑셀 문서 닫기
         doc.close();
@@ -739,9 +809,14 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
     catch (const std::exception& ex)
     {
         // 예외 발생 시 알림
-        std::wcout << L"\n파일: " << wfilePath << std::endl;
-        std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
-        std::wcout << L"사유: " << wErr << std::endl;
+        if (bShowDebugLog)
+        {
+            DebugLogUI.Add(L"엑셀 파일을 여는 도중 오류가 발생했습니다.", LogLevel::Error);
+            DebugLogUI.Add(L"파일: " + wfilePath, LogLevel::Error);
+
+            std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
+            DebugLogUI.Add(L"사유: " + wErr, LogLevel::Error);
+        }
     }
 }
 

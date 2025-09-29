@@ -17,7 +17,19 @@
 #include "Types.h"
 #include "ExcelSearchResult.h"
 #include "SearchOptionsWindow.h"
+#include "DebugLogWindow.h"
 
+
+struct FViewState
+{
+    bool bEnablePreview = false;
+    bool bShowFilePath = true;
+    bool bShowSheetName = true;
+    bool bShowCellAddress = true;
+    bool bShowSnippet = true;
+
+    int  ColumnCount = 0;        // 위 플래그 합계
+};
 
 
 class ImGuiManager : public Singleton<ImGuiManager>, public Scene
@@ -54,7 +66,8 @@ public:
 private:
     std::string currentKeyword; // 현재 검색중인 키워드
     std::vector<std::pair<std::string, std::string>> searchQueue; // 검색 대기(큐)
-    class SearchOptionsWindow GSearchOptionsUI;
+    class SearchOptionsWindow SearchOptionsUI; // 검색 옵션 UI
+    class DebugLogWindow DebugLogUI;       // 디버그 로그 UI
 
     // 상태 체크용
 public:
@@ -67,6 +80,7 @@ private:
     bool isWindowOpen{ true }; // 윈도우창이 켜져 되어있는지 여부
     bool isSearching{ false }; // 현재 검색이 진행중인지 여부
     bool hasSearched{ false }; // 검색한 적이 있는지 여부
+    struct FViewState CachedView; // 뷰 상태 캐시 (옵션 창에서 변경될 때마다 갱신)
 
 
 
