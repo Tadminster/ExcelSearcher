@@ -20,6 +20,9 @@ public:
     static std::string WStringToUTF8(const std::wstring& wstr);
     static std::wstring UTF8ToWString(const std::string& str);
 
+    // 문자열을 소문자로 변환
+    static std::string ToLower(const std::string& str);
+
     // ASCII 문자열 검사
     static bool IsAscii(const std::string& str);
 

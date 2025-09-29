@@ -92,9 +92,11 @@ private:
     void SearchInExcelFile(const std::string& keyword, const std::pair<std::string, std::string>& filePair);  // 선택된 엑셀 파일에서 검색
     std::string CopyExcelFile(const std::string& originalPath); // 엑셀 파일 복사
     bool ProcessCell(OpenXLSX::XLWorksheet& sheet, const std::string& fileName, const std::string& sheetName, const std::string& keyword, uint16_t row, uint16_t col);
+    bool IsValueMatch(const std::string& cellValue, const std::string& keyword); // 셀 값이 키워드와 일치하는지 여부
     std::string GetCellText(OpenXLSX::XLWorksheet& sheet, OpenXLSX::XLCellReference); // 셀의 텍스트 값을 문자열로 변환
     std::vector<std::string> GetFullRowData(OpenXLSX::XLWorksheet& sheet, uint16_t col, uint16_t maxRow = 100); // 특정 행의 전체 데이터 가져오기
 
+    static bool ContainsIgnoreCase(const std::string& cellValue, const std::string& keyword); // 대소문자 구분 없이 포함 여부 확인
 
 //====================================================================================
 //  Progress Bar

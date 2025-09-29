@@ -6,9 +6,10 @@
 struct FSearchOptions
 {
     // 기본 검색 동작
-    bool bCaseSensitive = false;        // 대/소문자 구분
-    bool bWholeWord = false;            // 단어 전체 일치
-    bool bUseCustomFillter = false;     // 커스텀 필터 사용
+    bool bCaseSensitive     = false;    // 대/소문자 구분
+    bool bWholeWord         = false;    // 단어 전체 일치
+    bool bUseRegex          = false;    // 정규식 사용
+    bool bUseCustomFillter  = false;    // 커스텀 필터 사용
 
     // 디버그
     bool bShowDebugOverlay = false;     // 디버그 오버레이(히트박스/시간 등)

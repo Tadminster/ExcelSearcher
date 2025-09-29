@@ -92,7 +92,7 @@ void SearchOptionsWindow::DrawContents()
                     ImGui::TableSetColumnIndex(0);
                     ImGui::Checkbox(u8" 대/소문자 구분", &DraftOptions.bCaseSensitive);
                     if (ImGui::IsItemHovered())
-                        ImGui::SetTooltip(u8"예: 'Test'와 'test'를 서로 다른 단어로 구분합니다.");
+                        ImGui::SetTooltip(u8"예: 'Cat'과 'cat'을 서로 다른 단어로 구분합니다.");
 
                     ImGui::Dummy(ImVec2(0, 1)); // 항목 간 간격용 더미
 
@@ -101,8 +101,16 @@ void SearchOptionsWindow::DrawContents()
                     ImGui::TableSetColumnIndex(0);
                     ImGui::Checkbox(u8" 단어 전체 일치", &DraftOptions.bWholeWord);
                     if (ImGui::IsItemHovered())
-                        ImGui::SetTooltip(u8"예: 'cat'를 찾을 때 'concatenate'는 제외하고 정확히 'cat'만 찾습니다.");
+                        ImGui::SetTooltip(u8"예: 'cat'를 찾을 때 'polecat'는 제외하고 정확히 'cat'만 찾습니다.");
 
+                    ImGui::Dummy(ImVec2(0, 1));
+
+                    // 정규식 사용
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Checkbox(u8" 정규식 사용", &DraftOptions.bUseRegex);
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(u8"정규 표현식을 사용하여 복잡한 패턴 매칭을 수행합니다.\n예: '^c.*s$'는 'c'로 시작하고 's'로 끝나는 단어를 찾습니다.\n'Cat', 'Cut', 'Craft', Count' 등이 매치됩니다.");
                     ImGui::Dummy(ImVec2(0, 1));
 
                     // 커스텀 필터 사용 (향후 확장용 스위치)

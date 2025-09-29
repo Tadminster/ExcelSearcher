@@ -1,6 +1,7 @@
 #include "SystemUtils.h"
 #include <codecvt>
 #include <locale>
+#include <algorithm>
 
 
 std::string SystemUtils::WStringToUTF8(const std::wstring& wstr)
@@ -21,6 +22,18 @@ std::wstring SystemUtils::UTF8ToWString(const std::string& str)
 
     return wstr;
 }
+
+std::string SystemUtils::ToLower(const std::string& str)
+{
+    if (str.empty()) return "";
+
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    return lowerStr;
+}
+
 
 bool SystemUtils::IsAscii(const std::string& str)
 {

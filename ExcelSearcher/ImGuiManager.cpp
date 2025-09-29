@@ -2,6 +2,9 @@
 
 #include <locale>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
+#include <regex>
 
 #include <ImGuiFileDialog.h>
 #include <OpenXLSX.hpp>
@@ -642,7 +645,7 @@ bool ImGuiManager::StartSearch(const std::string& keyword)
     searchQueue.clear();
     // 선택된 파일을 순차 접근 가능한 벡터에 복사
     for (const auto& pair : selectedFiles)
-        searchQueue.push_back(pair);
+        searchQueue.emplace_back(pair);
 
     return true;
 }
@@ -836,7 +839,7 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     std::string cellText = GetCellText(sheet, cellRef);
 
     // 키워드 포함 여부 확인
-    if (cellText.find(keyword) != std::string::npos)
+    if (IsValueMatch(cellText, keyword))
     {
         // 검색 결과 저장
         ExcelSearchResult result;
@@ -849,12 +852,71 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
         result.fullRowData = GetFullRowData(sheet, row);
 
         // 결과 벡터에 추가
-        searchResults.push_back(result);
+        searchResults.emplace_back(result);
 
         return true;  // 유효한 값 있는 셀
     }
     // 빈 셀 또는 키워드 미포함
     else return false;
+}
+
+bool ImGuiManager::IsValueMatch(const std::string& cellValue, const std::string& keyword)
+{
+    if (keyword.empty()) return false;
+
+    const auto& Opt = SearchOptionsUI.Get();
+
+    try
+    {
+        // 정규식 검색
+        if (Opt.bUseRegex)
+        {
+            std::regex_constants::syntax_option_type flags = std::regex::ECMAScript;
+            if (!Opt.bCaseSensitive) flags |= std::regex::icase;
+
+            std::regex re(keyword, flags);
+            return std::regex_search(cellValue, re);
+        }
+        // 완전 일치 검색
+        else if (Opt.bWholeWord)
+        {
+            // 대소문자 구분 있는 완전 일치 검색
+            if (Opt.bCaseSensitive)
+            {
+                return (cellValue == keyword);
+            }
+            // 대소문자 구분 없는 완전 일치 검색
+            else
+            {
+                return (SystemUtils::ToLower(cellValue) == SystemUtils::ToLower(keyword));
+            }
+        }
+        // 부분 문자열 검색
+        else
+        {
+            // 대소문자 구분 있는 부분 문자열 검색
+            if (Opt.bCaseSensitive)
+            {
+                return (cellValue.find(keyword) != std::string::npos);
+            }
+            // 대소문자 구분 없는 부분 문자열 검색
+            else
+            {
+                return ContainsIgnoreCase(cellValue, keyword);
+            }
+        }
+    }
+    catch (const std::regex_error& e)
+    {
+        // 잘못된 정규식 등 오류 시, 디버그 오버레이에 알림
+        if (SearchOptionsUI.Get().bShowDebugOverlay)
+        {
+            std::wstring wMsg = L"정규식 오류: ";
+            wMsg += SystemUtils::UTF8ToWString(e.what());
+            DebugLogUI.Add(wMsg, LogLevel::Error);
+        }
+        return false;
+    }
 }
 
 // ==========================================================================
@@ -934,6 +996,15 @@ std::vector<std::string> ImGuiManager::GetFullRowData(OpenXLSX::XLWorksheet& she
     }
 
     return outVector;
+}
+
+bool ImGuiManager::ContainsIgnoreCase(const std::string& cellValue, const std::string& keyword)
+{
+    if (keyword.empty()) return false;
+    const std::string t = SystemUtils::ToLower(cellValue);
+    const std::string k = SystemUtils::ToLower(keyword);
+
+    return (t.find(k) != std::string::npos);
 }
 
 
