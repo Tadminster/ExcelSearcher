@@ -1,6 +1,11 @@
 #include "SearchOptionsWindow.h"
 #include "../ExcelSearcher/IconsFontAwesome6.h"
 
+SearchOptionsWindow::SearchOptionsWindow()
+{
+    SetMetaColumnCount();
+}
+
 void SearchOptionsWindow::Open()
 {
     // 모달 팝업을 열 준비
@@ -133,7 +138,7 @@ void SearchOptionsWindow::DrawContents()
                     // 파일 경로
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Checkbox(u8" 파일 경로", &DraftOptions.bShowFilePath);
+                    ImGui::Checkbox(u8" 파일 경로", &DraftOptions.bShowFileName);
                     if (ImGui::IsItemHovered())
                         ImGui::SetTooltip(u8"결과 표에 전체 파일 경로를 함께 표시합니다.");
                     ImGui::Dummy(ImVec2(0, 1));
@@ -233,6 +238,9 @@ void SearchOptionsWindow::DrawContents()
     // 적용: 콜백이 지정되어 있다면 현재 Options를 전달 후 닫기
     if (ImGui::Button("적용", btnSize))
     {
+        // 메타데이터 열 개수 계산
+        SetMetaColumnCount();
+
         // 실제 옵션에 반영
         Options = DraftOptions;
 
@@ -244,4 +252,13 @@ void SearchOptionsWindow::DrawContents()
     }
 }
 
+void SearchOptionsWindow::SetMetaColumnCount()
+{
+    MetaColumnCount = 0;
+    if (DraftOptions.bEnablePreview)   MetaColumnCount++;
+    if (DraftOptions.bShowFileName)    MetaColumnCount++;
+    if (DraftOptions.bShowSheetName)   MetaColumnCount++;
+    if (DraftOptions.bShowCellAddress) MetaColumnCount++;
+    if (DraftOptions.bShowSnippet)     MetaColumnCount++;
+}
 
