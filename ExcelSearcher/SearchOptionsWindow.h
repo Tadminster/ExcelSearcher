@@ -1,5 +1,7 @@
 #pragma once
+#include <string>
 #include <functional>
+#include <vector>
 #include <imgui.h>
 
 // 검색 옵션을 한 곳에 모아두는 구조체
@@ -9,10 +11,6 @@ struct FSearchOptions
     bool bCaseSensitive     = false;    // 대/소문자 구분
     bool bWholeWord         = false;    // 단어 전체 일치
     bool bUseRegex          = false;    // 정규식 사용
-    bool bUseCustomFillter  = false;    // 커스텀 필터 사용
-
-    // 디버그
-    bool bShowDebugOverlay = false;     // 디버그 오버레이(히트박스/시간 등)
 
     // 추가 정보(메타데이터) 선택
     bool bEnablePreview     = true;     // 미리보기 패널 사용
@@ -20,6 +18,13 @@ struct FSearchOptions
     bool bShowSheetName     = true;     // 시트 이름 표시
     bool bShowCellAddress   = true;     // 셀 주소 표시 (예: A1)
     bool bShowSnippet       = true;     // 스니펫(문맥) 표시
+    bool bUseCustomFillter  = false;    // 커스텀 필터 사용
+
+    // 디버그
+    bool bShowDebugOverlay = false;     // 디버그 오버레이(히트박스/시간 등)
+
+    // 커스텀 메타데이터
+    std::vector<std::string> CustomMetadatas; // 사용자 정의 메타데이터 목록
 };
 
 
@@ -52,7 +57,7 @@ public:
     const FSearchOptions& Get() const { return Options; }
 
     // 외부에서 옵션을 갱신용 (저장/불러오기)
-    void Set(const FSearchOptions& In) { Options = In; }
+    void Set(const FSearchOptions& In);
 
     // 변경 사항 적용 콜백
     void SetOnApply(FOnApply In) { OnApply = std::move(In); }
@@ -65,6 +70,8 @@ public:
     // ============================================================================
 private:
     void SetMetaColumnCount(); // 메타데이터 열 개수 계산
+    void SanitizeCustomMetadatas(std::vector<std::string>& metas); // 커스텀 메타데이터 정리 (중복/공백 제거)
+
 
     // ============================================================================
     // 멤버 변수
@@ -78,6 +85,5 @@ private:
     FOnApply OnApply;               // 적용 콜백
 
     int MetaColumnCount;            // 메타데이터 열 개수 (결과 리스트 헤더 설정용)
-
 };
 

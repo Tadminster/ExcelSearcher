@@ -28,6 +28,8 @@ struct FViewState
     bool bShowCellAddress = true;
     bool bShowSnippet = true;
 
+    bool bUseCustomFilter = false;
+
     int  ColumnCount = 0;        // 위 플래그 합계
 };
 
@@ -52,6 +54,9 @@ public:
     // 스타일 및 설정
     void SetupStyle();
 
+private:
+    void DrawResultsTable();    // 검색 결과 테이블
+
 
     //====================================================================================
     //  멤버 변수들
@@ -71,16 +76,17 @@ private:
 
     // 상태 체크용
 public:
-    // main에서 isWindowOpen을 리턴받아 종료시점을 알기 위한 함수
+    // main에서 bIsWindowOpen을 리턴받아 종료시점을 알기 위한 함수
     bool IsDone() const;
 
 private:
     // 내부 상태
-    bool show_demo_window{ false }; // 데모 윈도우를 보여줄지 여부
-    bool isWindowOpen{ true }; // 윈도우창이 켜져 되어있는지 여부
-    bool isSearching{ false }; // 현재 검색이 진행중인지 여부
-    bool hasSearched{ false }; // 검색한 적이 있는지 여부
+    bool bShowDemoWindow{ false }; // 데모 윈도우를 보여줄지 여부
+    bool bIsWindowOpen{ true }; // 윈도우창이 켜져 되어있는지 여부
+    bool bIsSearching{ false }; // 현재 검색이 진행중인지 여부
+    bool bHasSearched{ false }; // 검색한 적이 있는지 여부
     struct FViewState CachedView; // 뷰 상태 캐시 (옵션 창에서 변경될 때마다 갱신)
+    std::vector<std::string> CustomFilters; // 사용자 정의 필터 목록
 
 
 
@@ -97,6 +103,10 @@ private:
     std::vector<std::string> GetFullRowData(OpenXLSX::XLWorksheet& sheet, uint16_t col, uint16_t maxRow = 100); // 특정 행의 전체 데이터 가져오기
 
     static bool ContainsIgnoreCase(const std::string& cellValue, const std::string& keyword); // 대소문자 구분 없이 포함 여부 확인
+
+    FSheetMetaState BuildMetaState(const FSearchOptions& Opt); // 커스텀 메타데이터 상태 구축
+    inline void TryResolveMetaCol(const std::string& cellText, uint32_t col, FSheetMetaState& st); // 커스텀 메타데이터 열 확인 및 저장
+
 
 //====================================================================================
 //  Progress Bar

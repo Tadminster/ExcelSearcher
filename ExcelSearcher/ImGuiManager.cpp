@@ -11,6 +11,7 @@
 
 #include "SystemUtils.h"
 
+std::unordered_map<std::string, FSheetMetaState> MetaStatePerSheet; // key: file|sheet
 
 // ImGui 매니저 초기화 함수
 void ImGuiManager::Init()
@@ -115,7 +116,7 @@ void ImGuiManager::Init()
 
 
     // 기본 창 상태 true로 설정
-    isWindowOpen = true;
+    bIsWindowOpen = true;
 
 
 }
@@ -133,7 +134,7 @@ void ImGuiManager::SetupImGuiContext(HWND hwnd, ID3D11Device* device, ID3D11Devi
 
 bool ImGuiManager::IsDone() const
 {
-    return !isWindowOpen;
+    return !bIsWindowOpen;
 }
 
 void ImGuiManager::Release()
@@ -163,11 +164,11 @@ void ImGuiManager::Update()
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 
     // 데모 창 보기 (테스트용)
-    if (show_demo_window)
-        ImGui::ShowDemoWindow(&show_demo_window);
+    if (bShowDemoWindow)
+        ImGui::ShowDemoWindow(&bShowDemoWindow);
 
     // 검색 중이고 아직 처리할 파일이 남아 있다면 업데이트마다 검색되도록 처리
-    if (isSearching)
+    if (bIsSearching)
     {
         // searchQueue에서 이번에 검색할 파일명과 경로를 가져옴
         const auto& filePair = searchQueue[currentFileIndex - 1];
@@ -183,16 +184,18 @@ void ImGuiManager::Update()
         // 모든 파일 검색 완료 시 검색 종료
         if (currentFileIndex > totalFilesCount)
         {
-            isSearching = false;
-            hasSearched = true;
+            bIsSearching = false;
+            bHasSearched = true;
         }
     }
 
     static char keywordBuffer[128];  // 검색어 입력 버퍼
     // 메인 창 시작
-    ImGui::Begin(u8"Excel Searcher", &isWindowOpen);
+    ImGui::Begin(u8"Excel Searcher", &bIsWindowOpen);
     {
-        // 파일 열기 버튼
+        //------------------------------------------------------------------------
+        // file open button & dialog
+        //------------------------------------------------------------------------
         if (ImGui::Button(u8"파일 열기"))
         {
             // 파일 선택기 설정
@@ -248,7 +251,9 @@ void ImGuiManager::Update()
             ImGuiFileDialog::Instance()->Close();
         }
 
-        // 선택된 파일 디버깅
+        //------------------------------------------------------------------------
+        // selected files debug info
+        //------------------------------------------------------------------------
         if (!selectedFiles.empty())
         {
             ImGui::SameLine();
@@ -277,9 +282,11 @@ void ImGuiManager::Update()
             ImGui::Text(u8"현재 선택 파일이 없습니다. 파일을 선택하세요.");
         }
 
-        // 검색어 입력 UI 영역 -----------------------------
         ImGui::Separator();
-        // 초기화 버튼
+
+        //------------------------------------------------------------------------
+        // search field erase button
+        //------------------------------------------------------------------------
         if (ImGui::Button(ICON_FA_ERASER))
         {
             keywordBuffer[0] = '\0'; // 검색어 초기화
@@ -290,7 +297,9 @@ void ImGuiManager::Update()
         }
         ImGui::SameLine();
 
-        // 검색어 입력 필드와 힌트 텍스트 처리
+        //------------------------------------------------------------------------
+        // search field ui & hint text
+        //------------------------------------------------------------------------
         ImGui::PushID("SearchBox");
         ImVec2 cursorPos = ImGui::GetCursorScreenPos();
         ImGui::SetNextItemWidth(300);
@@ -308,7 +317,9 @@ void ImGuiManager::Update()
 
         ImGui::SameLine();
 
-        // 검색
+        //------------------------------------------------------------------------
+        // search button & options
+        //------------------------------------------------------------------------
         if (ImGui::Button(u8"검색"))
         {
             // 검색 옵션 캐시 갱신
@@ -318,6 +329,7 @@ void ImGuiManager::Update()
             CachedView.bShowSheetName = Opt.bShowSheetName;
             CachedView.bShowCellAddress = Opt.bShowCellAddress;
             CachedView.bShowSnippet = Opt.bShowSnippet;
+            CachedView.bUseCustomFilter = Opt.bUseCustomFillter;
 
             CachedView.ColumnCount = SearchOptionsUI.GetMetaColumnCount();
 
@@ -335,9 +347,41 @@ void ImGuiManager::Update()
                 std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
                 if (SearchOptionsUI.Get().bShowDebugOverlay)
                 {
-                    DebugLogUI.Add(L"검색을 시작합니다: " + wKeyword, LogLevel::Info);
+                    DebugLogUI.Add(L"검색을 시작합니다.", LogLevel::Info);
+                    DebugLogUI.AddFmt(LogLevel::Info, L"검색어: %s", wKeyword.c_str());
+
+                    // Options 정보 출력
+                    DebugLogUI.AddFmt(LogLevel::Info, L"기본 검색 동작: 대소문자 구분(%s), 정규식(%s), 전체 단어(%s), 미리보기(%s)",
+                        SearchOptionsUI.Get().bCaseSensitive    ? L"T" : L"F",
+                        SearchOptionsUI.Get().bUseRegex         ? L"T" : L"F",
+                        SearchOptionsUI.Get().bWholeWord        ? L"T" : L"F",
+                        SearchOptionsUI.Get().bEnablePreview    ? L"T" : L"F");
+
+                    DebugLogUI.AddFmt(LogLevel::Info, L"추가 정보: 미리보기(%s), 파일 이름(%s), 시트 이름(%s), 셀 주소(%s), 스니펫(%s)",
+                        SearchOptionsUI.Get().bEnablePreview    ? L"T" : L"F",
+                        SearchOptionsUI.Get().bShowFileName     ? L"T" : L"F",
+                        SearchOptionsUI.Get().bShowSheetName    ? L"T" : L"F",
+                        SearchOptionsUI.Get().bShowCellAddress  ? L"T" : L"F",
+                        SearchOptionsUI.Get().bShowSnippet      ? L"T" : L"F");
+
+                    if (SearchOptionsUI.Get().bUseCustomFillter)
+                        {
+                        std::wstring metas = L"";
+                        for (const auto& meta : SearchOptionsUI.Get().CustomMetadatas)
+                        {
+                            metas += SystemUtils::UTF8ToWString(meta) + L", ";
+                        }
+                        if (!metas.empty())
+                        {
+                            metas = metas.substr(0, metas.size() - 2); // 마지막 ", " 제거
+                        }
+                        DebugLogUI.AddFmt(LogLevel::Info, L"커스텀 메타데이터: T(%s)", metas.c_str());
+                    }
+                    else
+                    {
+                        DebugLogUI.AddFmt(LogLevel::Info, L"커스텀 메타데이터: F");
+                    }
                 }
-                //std::wcout << L"검색을 시작합니다: " << wKeyword << std::endl;
             }
         }
         if (ImGui::IsItemHovered())
@@ -357,25 +401,11 @@ void ImGuiManager::Update()
             ImGui::SetTooltip(u8"검색 옵션 설정\n검색 옵션을 설정하려면 이 버튼을 누르세요.");
         }
 
-        static bool bInit = false;
-        if (!bInit)
-        {
-            SearchOptionsUI.SetOnApply([](const FSearchOptions& Opt)
-                {
-                    // 여기서 사용 중인 검색 시스템/미리보기 패널/디버그 표시 등에 옵션 반영
-                    // 예)
-                    // SearchEngine::Get().SetCaseSensitive(Opt.bCaseSensitive);
-                    // PreviewPanel::Get().SetEnabled(Opt.bEnablePreview);
-                    // DebugOverlay::Get().SetVisible(Opt.bShowDebugOverlay);
-                    // ...
-                });
-            bInit = true;
-        }
-
-
         SearchOptionsUI.Draw();
 
-        // 진행도 표시
+        //------------------------------------------------------------------------
+        // progress bar
+        //------------------------------------------------------------------------
         if (showProgressBar)
         {
             ImGui::SameLine();
@@ -386,185 +416,42 @@ void ImGuiManager::Update()
 
         ImGui::Separator();
 
-
-
+        //------------------------------------------------------------------------
+        // search result table
+        //------------------------------------------------------------------------
         // 검색 결과가 있으면
         if (!searchResults.empty())
         {
-            ImGui::Separator();
-            ImGui::Text(u8"검색 결과: %d개 일치", searchResults.size());
-
-            // 표 크기 지정
-            ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
-            ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-
-            // 표 시작 (5열)
-            if (ImGui::BeginTable("ResultTable", CachedView.ColumnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
-            {
-                // 헤더 행
-                if (CachedView.bEnablePreview) ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                if (CachedView.bShowFilePath) ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch);
-                if (CachedView.bShowSheetName) ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthFixed);
-                if (CachedView.bShowCellAddress) ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthFixed);
-                if (CachedView.bShowSnippet) ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableHeadersRow();
-
-                // 결과 출력 영역
-                for (const auto& result : searchResults)
-                {
-                    ImGui::TableNextRow();
-
-                    if (CachedView.bEnablePreview)
-                    {
-                        // 1열: 미리보기 버튼
-                        //ImGui::TableSetColumnIndex(ColumnIndex++);
-                        ImGui::TableNextColumn();
-
-                        // 행마다 고유한 팝업 ID 부여 (ID 충돌 방지)
-                        ImGui::PushID(&result);
-
-                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 2));
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.80f, 1));
-                        bool open = ImGui::SmallButton(ICON_FA_EYE);
-                        ImGui::PopStyleColor();
-                        ImGui::PopStyleVar();
-
-                        // 팝업 열기
-                        if (open) ImGui::OpenPopup("row_preview");
-                        if (ImGui::BeginPopup("row_preview"))
-                        {
-                            // 메타
-                            ImGui::Text("%s | %s | %s",
-                                result.fileName.c_str(),
-                                result.sheetName.c_str(),
-                                result.cellAddress.c_str());
-                            ImGui::Separator();
-
-                            // 스크롤 가능한 본문
-                            ImGui::BeginChild("row_tip", ImVec2(800, 100), true, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
-
-                            if (result.fullRowData.empty())
-                            {
-                                ImGui::TextUnformatted(u8"(표시할 값이 없습니다)");
-                            }
-                            else
-                            {
-                                // 값 하나가 차지할 최대 가로폭
-                                static const float maxCellWidth = 400.0f;
-
-                                bool first = true;
-                                for (const auto& text : result.fullRowData)
-                                {
-                                    if (text.empty()) continue;
-
-                                    if (!first)
-                                    {
-                                        ImGui::SameLine(0.0f, 8.0f);
-                                        ImGui::TextDisabled("|");            // column 구분자
-                                        ImGui::SameLine(0.0f, 8.0f);
-                                    }
-                                    first = false;
-
-                                    // 현재 커서 X + 최대폭 지점에서 자동 줄바꿈
-                                    const float startX = ImGui::GetCursorPosX();
-                                    ImGui::PushTextWrapPos(startX + maxCellWidth);
-                                    ImGui::TextUnformatted(text.c_str());
-                                    ImGui::PopTextWrapPos();
-                                }
-                            }
-
-                            ImGui::EndChild();
-
-                            // copy btn
-                            if (ImGui::Button(u8"복사"))
-                            {
-                                std::string buf; buf.reserve(4096);
-                                for (size_t c = 0; c < result.fullRowData.size(); ++c)
-                                {
-                                    const auto& v = result.fullRowData[c];
-                                    if (v.empty()) continue;
-
-                                    buf += v;
-                                    buf += '\n';
-                                }
-                                ImGui::SetClipboardText(buf.c_str());
-                            }
-                            if (ImGui::IsItemHovered())
-                            {
-                                ImGui::SetTooltip(u8"클립보드에 복사합니다.");
-                            }
-
-                            ImGui::SameLine();
-
-                            // close btn
-                            if (ImGui::Button(u8"닫기")) ImGui::CloseCurrentPopup();
-                            if (ImGui::IsItemHovered())
-                            {
-                                ImGui::SetTooltip(u8"팝업 닫기");
-                            }
-
-                            ImGui::EndPopup();
-                        }
-
-                        ImGui::PopID();
-                    }
-
-                    if (CachedView.bShowFilePath)
-                    {
-                        // 파일명
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%s", result.fileName.c_str());
-                    }
-
-                    if (CachedView.bShowSheetName)
-                    {
-                        // 시트명
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%s", result.sheetName.c_str());
-                    }
-
-                    if (CachedView.bShowCellAddress)
-                    {
-                        // 위치 (셀 주소)
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%s", result.cellAddress.c_str());
-                    }
-
-                    if (CachedView.bShowSnippet)
-                    {
-                        // 셀 내용
-                        ImGui::TableNextColumn();
-                        ImGui::TextWrapped("%s", result.cellValue.c_str());
-                    }
-                }
-
-                ImGui::EndTable();
-            }
-
-            ImGui::EndChild();
+            // 결과 테이블 그리기
+            DrawResultsTable();
         }
-        else if (hasSearched)
+        // 검색 결과가 없고, 검색이 끝났다면 
+        else if (bHasSearched)
         {
+            // 결과 없음 메시지
             ImGui::Separator();
             ImGui::Text(u8"검색 결과: 0개 일치");
         }
+
+
     }
     ImGui::End();
 
-    // 🔹 디버그 오버레이: 옵션이 켜져 있으면 그리기
-    if (SearchOptionsUI.Get().bShowDebugOverlay) // 옵션 플래그 기준
+    //------------------------------------------------------------------------
+    // debug log overlay
+    //------------------------------------------------------------------------
+    bool show = SearchOptionsUI.Get().bShowDebugOverlay;
+    if (show)
     {
-        static bool open = true;
-        DebugLogUI.DrawWindow(&open);
+        // 디버그 로그 창 그리기
+        DebugLogUI.DrawWindow(&show);
 
-        // 사용자가 X로 닫으면 옵션과 동기화(선택)
-        if (!open)
+        // x 버튼이 눌려서 창을 닫았을 때
+        if (show != SearchOptionsUI.Get().bShowDebugOverlay)
         {
-            open = false;
-            // SearchOptionsUI에 setter가 있으면 쓰고, 없으면 멤버 접근 방식에 맞춰 반영
-            // SearchOptionsUI.SetShowDebugOverlay(false);
-            // 또는 내부 참조를 반환하는 API가 있다면 활용:
-            // SearchOptionsUI.GetMutable().bShowDebugOverlay = false;
+            auto cur = SearchOptionsUI.Get();   // 현재 옵션 복사
+            cur.bShowDebugOverlay = show;       // false로 내려옴(창에서 X를 눌렀을 때 등)
+            SearchOptionsUI.Set(cur);           // ✅ 단일 진입로로 적용(캐시/동기화 포함)
         }
     }
 }
@@ -627,19 +514,246 @@ void ImGuiManager::SetupStyle()
     }
 }
 
+void ImGuiManager::DrawResultsTable()
+{
+    ImGui::Separator();
+    ImGui::Text(u8"검색 결과: %d개 일치", searchResults.size());
+
+    // 컬럼이 하나도 없으면 메시지 출력 후 종료
+    if (CachedView.ColumnCount <= 0)
+    {
+        ImGui::TextUnformatted(u8"표시할 컬럼이 없습니다. 검색 옵션에서 최소 1개 이상 활성화하세요.");
+
+        return;
+    }
+
+    // 검색 옵션 Cache
+    const auto& Opt = SearchOptionsUI.Get();
+    
+    // 표 크기 지정
+    ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
+    ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+
+    ImGuiTableFlags TableFlags =
+        ImGuiTableFlags_ScrollY |          // 세로 스크롤
+        ImGuiTableFlags_RowBg |            // 짝/홀수 줄 배경
+        ImGuiTableFlags_Borders |          // 전체 경계선
+        ImGuiTableFlags_Resizable |        // 컬럼 리사이즈
+        ImGuiTableFlags_SizingStretchProp; // 컬럼 비율 배치
+
+    // 열 수(column count) 계산
+    int BaseColumnCount = CachedView.ColumnCount;
+    int MetaColumnCount = (Opt.bUseCustomFillter ? (int)Opt.CustomMetadatas.size() : 0);
+    int TotalColumnCount = BaseColumnCount + MetaColumnCount;
+
+    // 표 시작
+    if (ImGui::BeginTable("ResultTable", TotalColumnCount, TableFlags))
+    {
+        // 헤더 고정(스크롤 시 상단에 고정)
+        ImGui::TableSetupScrollFreeze(0, 1);
+
+        // 헤더 정의 (활성화된 옵션에 따라 컬럼 추가)
+        if (CachedView.bEnablePreview) ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+        if (CachedView.bShowFilePath) ImGui::TableSetupColumn(u8"파일명", ImGuiTableColumnFlags_WidthStretch);
+        if (CachedView.bShowSheetName) ImGui::TableSetupColumn(u8"시트", ImGuiTableColumnFlags_WidthFixed);
+        if (CachedView.bShowCellAddress) ImGui::TableSetupColumn(u8"위치", ImGuiTableColumnFlags_WidthFixed);
+        if (CachedView.bShowSnippet) ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
+
+        // 커스텀 메타데이터 컬럼 추가
+        if (Opt.bUseCustomFillter)
+        {
+            for (const auto& label : Opt.CustomMetadatas)
+            {
+                ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags_WidthFixed);
+            }
+        }
+
+        ImGui::TableHeadersRow();
+
+        // ----------------------------------- Cripper 시작 -----------------------------------
+        // 많은 행이 있을 때 성능 최적화
+        const int rowCount = (int)searchResults.size();
+        ImGuiListClipper clipper;
+        clipper.Begin(rowCount);
+
+        while (clipper.Step())
+        {
+            for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
+            {
+                const auto& result = searchResults[row];
+
+                // (행 높이 힌트: 내용이 대부분 1줄이면 켜면 좋음)
+                ImGui::TableNextRow(ImGuiTableRowFlags_None, ImGui::GetTextLineHeightWithSpacing());
+                
+                // 1열: 미리보기
+                if (CachedView.bEnablePreview)
+                {
+                    ImGui::TableNextColumn();
+
+                    ImGui::PushID(&result); // 행 고유 ID
+
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 2));
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.80f, 1));
+                    const bool open = ImGui::SmallButton(ICON_FA_EYE);
+                    ImGui::PopStyleColor();
+                    ImGui::PopStyleVar();
+
+                    if (open) ImGui::OpenPopup("row_preview");
+
+                    if (ImGui::BeginPopup("row_preview"))
+                    {
+                        // 메타 요약
+                        ImGui::Text("%s | %s | %s",
+                            result.fileName.c_str(),
+                            result.sheetName.c_str(),
+                            result.cellAddress.c_str());
+                        ImGui::Separator();
+
+                        // 스크롤 가능한 본문
+                        ImGui::BeginChild("row_tip", ImVec2(800, 100), true,
+                            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
+
+                        if (result.fullRowData.empty())
+                        {
+                            ImGui::TextUnformatted(u8"(표시할 값이 없습니다)");
+                        }
+                        else
+                        {
+                            // 값 하나당 최대 가로폭
+                            static const float maxCellWidth = 400.0f;
+
+                            bool first = true;
+                            for (const auto& text : result.fullRowData)
+                            {
+                                if (text.empty()) continue;
+
+                                if (!first)
+                                {
+                                    ImGui::SameLine(0.0f, 8.0f);
+                                    ImGui::TextDisabled("|");
+                                    ImGui::SameLine(0.0f, 8.0f);
+                                }
+                                first = false;
+
+                                const float startX = ImGui::GetCursorPosX();
+                                ImGui::PushTextWrapPos(startX + maxCellWidth);
+                                ImGui::TextUnformatted(text.c_str());
+                                ImGui::PopTextWrapPos();
+                            }
+                        }
+
+                        ImGui::EndChild();
+
+                        // 복사 버튼
+                        if (ImGui::Button(u8"복사"))
+                        {
+                            std::string buf; buf.reserve(4096);
+                            for (const auto& v : result.fullRowData)
+                            {
+                                if (!v.empty())
+                                {
+                                    buf += v;
+                                    buf += '\n';
+                                }
+                            }
+                            ImGui::SetClipboardText(buf.c_str());
+                        }
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetTooltip(u8"클립보드에 복사합니다.");
+
+                        ImGui::SameLine();
+
+                        // 닫기 버튼
+                        if (ImGui::Button(u8"닫기"))
+                            ImGui::CloseCurrentPopup();
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetTooltip(u8"팝업 닫기");
+
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::PopID();
+                }
+
+                // 2열: 파일명
+                if (CachedView.bShowFilePath)
+                {
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(result.fileName.c_str());
+                }
+
+                // 3열: 시트명
+                if (CachedView.bShowSheetName)
+                {
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(result.sheetName.c_str());
+                }
+
+                // 4열: 위치(셀 주소)
+                if (CachedView.bShowCellAddress)
+                {
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(result.cellAddress.c_str());
+                }
+
+                // 5열: 내용
+                if (CachedView.bShowSnippet)
+                {
+                    ImGui::TableNextColumn();
+                    // 래핑을 쓰면 행 높이가 가변
+                    ImGui::TextWrapped("%s", result.cellValue.c_str());
+                }
+
+                // 커스텀 메타데이터 컬럼
+                if (MetaColumnCount > 0)
+                {
+                    // 라벨 불일치(대소문자/공백 차이) 대비: 느슨한 조회 람다
+                    auto findMeta = [&](const std::string& wantLabel) -> const char*
+                        {
+                            // 1) 완전 일치 우선
+                            auto it = result.CustomMetadata.find(wantLabel);
+                            if (it != result.CustomMetadata.end()) return it->second.c_str();
+
+                            // 2) 대소문자만 무시(Trim 금지 정책 유지)
+                            const std::string wantLower = SystemUtils::ToLower(wantLabel);
+                            for (const auto& kv : result.CustomMetadata)
+                            {
+                                if (SystemUtils::ToLower(kv.first) == wantLower)
+                                    return kv.second.c_str();
+                            }
+                            return "";
+                        };
+
+                    for (const auto& label : Opt.CustomMetadatas)
+                    {
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(findMeta(label));
+                    }
+                }
+            }
+        }
+        // ----------------------------------- Cripper 종료 -----------------------------------
+
+        ImGui::EndTable();
+    }
+
+    ImGui::EndChild();
+}
+
 bool ImGuiManager::StartSearch(const std::string& keyword)
 {
     // 키워드가 없거나, 선택된 파일이 없으면 return
     if (keyword.empty() || selectedFiles.empty())
         return false;
 
-    searchResults.clear();
+    searchResults.clear();      // 이전 검색 결과 초기화
+    MetaStatePerSheet.clear();  // 이전 커스텀 메타데이터 상태 초기화
     totalFilesCount = selectedFiles.size();
     currentFileIndex = 1;
-    progressValue = static_cast<float>(currentFileIndex) / static_cast<float>(currentFileIndex);
+    progressValue = 0;
     currentKeyword = keyword;
     showProgressBar = true;
-    isSearching = true;
+    bIsSearching = true;
 
     // 이전 검색큐를 비우고
     searchQueue.clear();
@@ -672,6 +786,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
 
     if (bShowDebugLog)
     {
+        // File Info
         DebugLogUI.Add(L"===========================================", LogLevel::Separator);
         DebugLogUI.Add(L"파일 이름: " + wfileName, LogLevel::File);
         DebugLogUI.Add(L"전체 경로: " + wfilePath, LogLevel::File);
@@ -693,8 +808,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
             int sheetcnt = doc.workbook().sheetCount();
             DebugLogUI.AddFmt(LogLevel::File, L"시트 개수: %d", sheetcnt);
         }
-        //std::wcout << L"시트 개수: " << sheetcnt << std::endl;
-
+         
         // 엑셀 문서 내의 모든 시트 반복
         for (const auto& sheetName : doc.workbook().worksheetNames())
         {
@@ -702,13 +816,18 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
             OpenXLSX::XLWorksheet sheet = doc.workbook().worksheet(sheetName);
             std::wstring wSheetName = SystemUtils::UTF8ToWString(sheetName);
 
+            // 커스텀 메타데이터 상태 초기화
+            auto& st = MetaStatePerSheet[SheetKey(fileName, sheetName)];
+            if (st.Pending.empty() && st.Found.empty())
+            {
+                st = BuildMetaState(SearchOptionsUI.Get());
+            }
+
             // 시트 이름/행열 개수 출력
             if (bShowDebugLog)
             {
-
                 DebugLogUI.AddFmt(LogLevel::Sheet, L"시트: %ls  [rows %d] * [cols %d]",
                     wSheetName.c_str(), sheet.rowCount(), sheet.columnCount());
-
             }
 
             try
@@ -838,6 +957,10 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     // 셀 텍스트 가져오기
     std::string cellText = GetCellText(sheet, cellRef);
 
+    // ★ 커스텀 메타 해석: 텍스트만 전달
+    auto& st = MetaStatePerSheet[SheetKey(fileName, sheetName)];
+    TryResolveMetaCol(cellText, col, st);
+
     // 키워드 포함 여부 확인
     if (IsValueMatch(cellText, keyword))
     {
@@ -847,6 +970,30 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
         result.sheetName = sheetName;
         result.cellAddress = cellRef.address();
         result.cellValue = cellText;
+
+
+        // 같은 행의 메타 열 값들 부착
+        for (const auto& kv : st.Found)
+        {
+            uint32_t metaCol = kv.first;
+            const std::string& label = kv.second; // 라벨은 원문 그대로
+
+            auto metaCell = sheet.cell(OpenXLSX::XLCellReference(row, metaCol));
+            std::string metaVal;
+
+            // 히트난 셀이 메타 열과 같은 열이면, 이미 읽은 값을 재사용
+            if (metaCol == col)
+            {
+                metaVal = cellText;
+            }
+            // 그 외에는 메타 열의 셀 값을 읽어옴
+            else
+            {
+                const OpenXLSX::XLCellReference metaRef(row, metaCol);
+                metaVal = GetCellText(sheet, metaRef);
+            }
+            result.CustomMetadata[label] = metaVal;
+        }
 
         // 해당 셀이 포함된 row 전체 내용 저장
         result.fullRowData = GetFullRowData(sheet, row);
@@ -997,6 +1144,50 @@ std::vector<std::string> ImGuiManager::GetFullRowData(OpenXLSX::XLWorksheet& she
 
     return outVector;
 }
+
+FSheetMetaState ImGuiManager::BuildMetaState(const FSearchOptions& Opt)
+{
+    FSheetMetaState st;
+    if (!Opt.bUseCustomFillter) return st;
+
+
+    for (auto& raw : Opt.CustomMetadatas)
+    {
+        // 빈 문자열이 아니라면
+        if (!raw.empty())
+        {
+            // 앞뒤 공백 제거 후 소문자로 변환하여 삽입
+            st.Pending.insert(SystemUtils::ToLower(raw));
+        }
+    }
+
+    return st;
+}
+
+inline void ImGuiManager::TryResolveMetaCol(const std::string& cellText, uint32_t col, FSheetMetaState& st)
+{
+    if (st.Pending.empty()) return;             // 남은 타겟 없음
+    if (st.Found.find(col) != st.Found.end()) return; // 이 열 이미 확정
+
+    if (cellText.empty()) return;
+
+    const std::string lowered = SystemUtils::ToLower(cellText);
+    auto it = st.Pending.find(lowered);
+    if (it == st.Pending.end()) return;         // 대상 아님
+
+    // 매치 → 이 열을 메타열로 확정(라벨은 원문 그대로)
+    st.Found.emplace(col, cellText);
+    st.Pending.erase(it);
+
+    if (SearchOptionsUI.Get().bShowDebugOverlay)
+    {
+        DebugLogUI.AddFmt(LogLevel::Info, L"[Meta-Match] col=%u  label=\"%ls\"  (Pending->Found, 남은=%d)",
+            (unsigned)col,
+            SystemUtils::UTF8ToWString(cellText).c_str(),
+            (int)(st.Pending.size()));
+    }
+}
+
 
 bool ImGuiManager::ContainsIgnoreCase(const std::string& cellValue, const std::string& keyword)
 {

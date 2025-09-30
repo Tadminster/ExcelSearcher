@@ -1,6 +1,42 @@
 #include "SearchOptionsWindow.h"
 #include "../ExcelSearcher/IconsFontAwesome6.h"
 
+#include <unordered_set>
+
+// @brief InputText 의 CallbackResize 처리
+static int InputTextCallback_Resize(ImGuiInputTextCallbackData* data)
+{
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+    {
+        auto* str = reinterpret_cast<std::string*>(data->UserData);
+        str->resize(data->BufTextLen);  // 문자열 크기를 현재 입력 길이에 맞춤
+        data->Buf = str->data();        // 최신 버퍼 주소를 다시 알려줌
+    }
+    return 0;
+}
+
+// @brief std::string 기반 InputText 위젯
+static bool InputTextResizable(const char* label, std::string* str, ImGuiInputTextFlags flags = 0)
+{
+    // CallbackResize 를 항상 켜서 std::string 과 연동
+    flags |= ImGuiInputTextFlags_CallbackResize;
+
+    // 초기 capacity 가 0일 경우 버퍼를 넉넉히 확보
+    if (str->capacity() == 0) str->reserve(64);
+
+    // 실제 입력 처리
+    bool changed = ImGui::InputText(label,
+        str->data(),
+        str->capacity() + 1,
+        flags,
+        InputTextCallback_Resize,
+        str);
+
+    return changed;
+}
+
+
+
 SearchOptionsWindow::SearchOptionsWindow()
 {
     SetMetaColumnCount();
@@ -29,7 +65,7 @@ void SearchOptionsWindow::Draw()
     // ---------------------------------------------------------------------------
     // SearchOptions 창 크기 설정
     // ---------------------------------------------------------------------------
-    constexpr float minWidth = 280.0f;   // 최소 너비
+    constexpr float minWidth = 300.0f;   // 최소 너비
     constexpr float minHeight = 360.0f;   // 최소 높이
 
     ImVec2 sizeMin = ImVec2(minWidth, minHeight);                               // 창의 최소 크기
@@ -111,14 +147,6 @@ void SearchOptionsWindow::DrawContents()
                     ImGui::Checkbox(u8" 정규식 사용", &DraftOptions.bUseRegex);
                     if (ImGui::IsItemHovered())
                         ImGui::SetTooltip(u8"정규 표현식을 사용하여 복잡한 패턴 매칭을 수행합니다.\n예: '^c.*s$'는 'c'로 시작하고 's'로 끝나는 단어를 찾습니다.\n'Cat', 'Cut', 'Craft', Count' 등이 매치됩니다.");
-                    ImGui::Dummy(ImVec2(0, 1));
-
-                    // 커스텀 필터 사용 (향후 확장용 스위치)
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::Checkbox(u8" 커스텀 필터 사용", &DraftOptions.bUseCustomFillter);
-                    if (ImGui::IsItemHovered())
-                        ImGui::SetTooltip(u8"고급 사용자 정의 필터 파이프라인을 활성화합니다. (향후 확장)");
 
                     ImGui::EndTable();
                 }
@@ -174,10 +202,117 @@ void SearchOptionsWindow::DrawContents()
                     if (ImGui::IsItemHovered())
                         ImGui::SetTooltip(u8"검색된 문맥을 함께 보여줍니다.");
 
+                    ImGui::Dummy(ImVec2(0, 1));
+
+                    // 커스텀 필터 사용 (향후 확장용 스위치)
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Checkbox(u8" 커스텀 메타데이터 사용", &DraftOptions.bUseCustomFillter);
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(u8"사용자 정의 메타데이터 파이프라인을 활성화합니다.");
+
                     ImGui::EndTable();
                 }
                 ImGui::EndTabItem();
             }
+
+            // ----------------------------------- 커스텀 메타데이터 -----------------------------------
+            if (DraftOptions.bUseCustomFillter)
+            {
+                if (ImGui::BeginTabItem("커스텀"))
+                {
+                    
+                    // 처음 켜질 때 입력칸이 하나도 없으면 1칸 생성
+                    if (DraftOptions.CustomMetadatas.empty())
+                        DraftOptions.CustomMetadatas.emplace_back();
+
+                    ImGui::SeparatorText("커스텀 메타데이터(필터) 입력");
+
+                    // 설명
+                    ImGui::TextDisabled(u8"여기에 입력한 문자열이 셀 내용과 매치되면,\n해당 메타데이터 열이 결과창에 표시됩니다.");
+                    ImGui::Dummy(ImVec2(0, 4));
+
+                    // 커스텀 메타데이터 최대 개수
+                    constexpr int MaxMetadataCount = 6;
+                    // 현재 개수가 최대 개수보다 작은지 확인
+                    bool bCanAddMore = (int)DraftOptions.CustomMetadatas.size() < MaxMetadataCount;
+
+                    // 최대 개수 도달시 추가 버튼 비활성화
+                    ImGui::BeginDisabled(!bCanAddMore);
+                    {
+                        // 추가 버튼
+                        if (ImGui::Button(" " ICON_FA_PLUS " "))
+                        {
+                            if (bCanAddMore)
+                            {
+                                DraftOptions.CustomMetadatas.emplace_back();
+                            }
+                        }
+                        if (ImGui::IsItemHovered())
+                        {
+                            ImGui::SetTooltip(u8"새 커스텀 메타데이터 항목을 추가합니다.");
+                        }
+                    }
+                    ImGui::EndDisabled();
+
+                    ImGui::SameLine();
+                    // 전체 삭제 버튼
+                    if (ImGui::Button(ICON_FA_TRASH))
+                    {
+                        DraftOptions.CustomMetadatas.clear();
+                        DraftOptions.CustomMetadatas.emplace_back();
+                    }
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::SetTooltip(u8"모든 커스텀 메타데이터 항목을 삭제합니다.");
+                    }
+                    ImGui::SameLine();
+
+                    ImGui::TextDisabled(u8"(현재 %d개, 최대 %d개)", (int)DraftOptions.CustomMetadatas.size(), MaxMetadataCount);
+
+                    // 리스트(스크롤 영역)
+                    const float rowH = ImGui::GetTextLineHeightWithSpacing();
+                    if (ImGui::BeginChild("##CustomFilterList", ImVec2(0, rowH * 8.0f), true, ImGuiWindowFlags_None))
+                    {
+                        for (int MetadataIndex = 0; MetadataIndex < (int)DraftOptions.CustomMetadatas.size(); MetadataIndex++)
+                        {
+                            ImGui::PushID(MetadataIndex);
+
+                            // 한 줄: 입력필드 + 삭제 버튼
+                            const float removeBtnW = ImGui::CalcTextSize("삭제").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - removeBtnW - ImGui::GetStyle().ItemSpacing.x);
+
+                            InputTextResizable("##Filter", &DraftOptions.CustomMetadatas[MetadataIndex]);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("삭제"))
+                            {
+                                DraftOptions.CustomMetadatas.erase(DraftOptions.CustomMetadatas.begin() + MetadataIndex);
+                                ImGui::PopID();
+                                if (DraftOptions.CustomMetadatas.empty())
+                                    DraftOptions.CustomMetadatas.emplace_back();
+                                break; // 현재 프레임 루프 정합성
+                            }
+                            if (ImGui::IsItemHovered())
+                            {
+                                ImGui::SetTooltip(u8"이 커스텀 메타데이터 항목을 삭제합니다.");
+                            }
+
+                            ImGui::PopID();
+                        }
+
+                        ImGui::EndChild();
+                    }
+
+                    // 가이드
+                    ImGui::Dummy(ImVec2(0, 2));
+                    ImGui::TextDisabled(u8"중복/공백 항목은 적용 시 자동 정리됩니다.");
+
+                    ImGui::EndTabItem();
+                }
+            }
+
+           
 
             // ----------------------------------- 디버그 -----------------------------------
             // 개발/테스트/사용자 지원용 디버그 옵션
@@ -246,6 +381,9 @@ void SearchOptionsWindow::DrawContents()
     // 적용: 콜백이 지정되어 있다면 현재 Options를 전달 후 닫기
     if (ImGui::Button("적용", btnSize))
     {
+        // 커스텀 메타데이터 정리 (공백/중복 제거)
+        SanitizeCustomMetadatas(DraftOptions.CustomMetadatas);
+
         // 메타데이터 열 개수 계산
         SetMetaColumnCount();
 
@@ -260,6 +398,14 @@ void SearchOptionsWindow::DrawContents()
     }
 }
 
+void SearchOptionsWindow::Set(const FSearchOptions& In)
+{
+    Options = In;
+    DraftOptions = Options;     // UI 열었을 때 일관성
+
+    SetMetaColumnCount();
+}
+
 void SearchOptionsWindow::SetMetaColumnCount()
 {
     MetaColumnCount = 0;
@@ -270,3 +416,38 @@ void SearchOptionsWindow::SetMetaColumnCount()
     if (DraftOptions.bShowSnippet)     MetaColumnCount++;
 }
 
+void SearchOptionsWindow::SanitizeCustomMetadatas(std::vector<std::string>& metas)
+{
+    // 결과를 임시로 저장할 벡터
+    std::vector<std::string> out;
+    out.reserve(metas.size());
+
+    // 중복 체크용 unordered_set
+    std::unordered_set<std::string> seen;
+
+    for (const auto& str : metas)
+    {
+        // 문자열 전체 공백인지 확인
+        bool allSpaces = true;
+        for (unsigned char ch : str)
+        {
+            if (!std::isspace(ch))
+            {
+                allSpaces = false;
+                break;
+            }
+        }
+        // 전부 공백이라면 continue(제거)
+        if (allSpaces) continue;
+
+        // 중복 체크
+        if (seen.insert(str).second)
+        {
+            // 처음 본 문자열만 추가
+            out.emplace_back(str); 
+        }
+    }
+
+    // 결과를 원본 벡터에 복사
+    metas.swap(out);
+}

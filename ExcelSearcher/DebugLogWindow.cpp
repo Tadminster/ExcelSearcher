@@ -147,7 +147,7 @@ std::string DebugLogWindow::FormatTime(const std::chrono::system_clock::time_poi
 void DebugLogWindow::DrawWindow(bool* p_open)
 {
     // 제목/플래그: Collapse 비활성 + 메뉴바 활성
-    if (!ImGui::Begin(u8"디버그 오버레이", p_open,
+    if (!ImGui::Begin(u8"디버그 로그", p_open,
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
     {
         ImGui::End();
