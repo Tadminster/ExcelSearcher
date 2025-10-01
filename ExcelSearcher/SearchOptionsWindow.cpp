@@ -2,6 +2,10 @@
 #include "../ExcelSearcher/IconsFontAwesome6.h"
 
 #include <unordered_set>
+#include <fstream>
+#include <filesystem>
+#include <algorithm>
+#include <optional>
 
 // @brief InputText 의 CallbackResize 처리
 static int InputTextCallback_Resize(ImGuiInputTextCallbackData* data)
@@ -207,7 +211,7 @@ void SearchOptionsWindow::DrawContents()
                     // 커스텀 필터 사용 (향후 확장용 스위치)
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Checkbox(u8" 커스텀 메타데이터 사용", &DraftOptions.bUseCustomFillter);
+                    ImGui::Checkbox(u8" 커스텀 메타데이터 사용", &DraftOptions.bUseCustomMeta);
                     if (ImGui::IsItemHovered())
                         ImGui::SetTooltip(u8"사용자 정의 메타데이터 파이프라인을 활성화합니다.");
 
@@ -217,11 +221,11 @@ void SearchOptionsWindow::DrawContents()
             }
 
             // ----------------------------------- 커스텀 메타데이터 -----------------------------------
-            if (DraftOptions.bUseCustomFillter)
+            if (DraftOptions.bUseCustomMeta)
             {
                 if (ImGui::BeginTabItem("커스텀"))
                 {
-                    
+
                     // 처음 켜질 때 입력칸이 하나도 없으면 1칸 생성
                     if (DraftOptions.CustomMetadatas.empty())
                         DraftOptions.CustomMetadatas.emplace_back();
@@ -312,7 +316,7 @@ void SearchOptionsWindow::DrawContents()
                 }
             }
 
-           
+
 
             // ----------------------------------- 디버그 -----------------------------------
             // 개발/테스트/사용자 지원용 디버그 옵션
@@ -341,7 +345,7 @@ void SearchOptionsWindow::DrawContents()
         }
 
         // 내부 컨테이너 종료
-        ImGui::EndChild(); 
+        ImGui::EndChild();
     }
 
 
@@ -394,6 +398,10 @@ void SearchOptionsWindow::DrawContents()
         if (OnApply)
             OnApply(Options);
 
+
+        // 변경된 검색옵션 파일로 저장
+        SaveToFile();
+
         Close();
     }
 }
@@ -444,10 +452,184 @@ void SearchOptionsWindow::SanitizeCustomMetadatas(std::vector<std::string>& meta
         if (seen.insert(str).second)
         {
             // 처음 본 문자열만 추가
-            out.emplace_back(str); 
+            out.emplace_back(str);
         }
     }
 
     // 결과를 원본 벡터에 복사
     metas.swap(out);
+}
+
+bool SearchOptionsWindow::SaveToFile()
+{
+    // 파일 경로 정의
+    constexpr const char* TempFilePath = "SearchOptions.tmp";
+    constexpr const char* FinalFilePath = "SearchOptions.dat";
+
+    // 매직/버전 정의
+    constexpr const char* Magic = "EXCEL_SEARCHER_SEARCH_OPTIONS";
+    constexpr const char* Version = "1.1";
+
+
+    try
+    {
+        // 임시 파일에 기록
+        std::ofstream ofs(TempFilePath, std::ios::binary);
+        if (!ofs) return false;
+
+        // 매직/버전
+        WriteLine(ofs, "MAGIC", Magic);
+        WriteLine(ofs, "VERSION", Version);
+
+        // 기본 검색 동작
+        WriteBool(ofs, "bCaseSensitive", Options.bCaseSensitive);
+        WriteBool(ofs, "bWholeWord", Options.bWholeWord);
+        WriteBool(ofs, "bUseRegex", Options.bUseRegex);
+
+        // 표시/뷰 동작
+        WriteBool(ofs, "bEnablePreview", Options.bEnablePreview);
+        WriteBool(ofs, "bShowFileName", Options.bShowFileName);
+        WriteBool(ofs, "bShowSheetName", Options.bShowSheetName);
+        WriteBool(ofs, "bShowCellAddress", Options.bShowCellAddress);
+        WriteBool(ofs, "bShowSnippet", Options.bShowSnippet);
+        WriteBool(ofs, "bUseCustomMeta", Options.bUseCustomMeta);
+
+        // 디버그/커스텀 메타
+        WriteBool(ofs, "bShowDebugOverlay", Options.bShowDebugOverlay);
+
+        // 커스텀 메타 라벨
+        WriteLine(ofs, "CustomMetadatasCount", std::to_string(Options.CustomMetadatas.size()));
+        for (size_t i = 0; i < Options.CustomMetadatas.size(); i++)
+        {
+            // 줄바꿈/‘=’ 최소 처리(간단 escaping)
+            std::string v = Options.CustomMetadatas[i];
+            std::replace(v.begin(), v.end(), '\n', ' ');
+            std::replace(v.begin(), v.end(), '\r', ' ');
+            std::string key = "CustomMetadatas" + std::to_string(i);
+            WriteLine(ofs, key, v);
+        }
+
+        ofs.flush();
+        if (!ofs) return false; // 기록 실패 체크
+        ofs.close();
+
+        // 임시파일과 최종파일
+        const std::filesystem::path tmp = std::filesystem::path(TempFilePath);
+        const std::filesystem::path final = std::filesystem::path(FinalFilePath);
+
+        // 임시파일을 최종파일로 덮어쓰고, 임시파일 삭제
+        std::filesystem::copy_file(tmp, final, std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::remove(tmp);
+
+        return true;
+    }
+    catch (...)
+    {
+        // 실패 시 임시파일 정리 시도(있다면)
+        std::error_code ec;
+        std::filesystem::remove(TempFilePath, ec);
+
+        return false;
+    }
+}
+
+bool SearchOptionsWindow::LoadFromFile()
+{
+    constexpr const char* FinalFilePath = "SearchOptions.dat";
+    constexpr const char* Magic = "EXCEL_SEARCHER_SEARCH_OPTIONS";
+
+    std::ifstream ifs(FinalFilePath, std::ios::binary);
+    if (!ifs) return false;
+
+    std::unordered_map<std::string, std::string> kv;
+    std::string line;
+    while (std::getline(ifs, line)) {
+        // 🔹 CRLF 안전 처리 (Windows에서 '\r' 남는 경우 제거)
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+
+        auto pos = line.find('=');
+        if (pos == std::string::npos) continue;
+
+        std::string k = line.substr(0, pos);
+        std::string v = line.substr(pos + 1);
+
+        // 여기서는 Trim 제거 → 앞뒤 공백은 보존
+        kv.emplace(std::move(k), std::move(v));
+    }
+
+    // 매직 체크
+    if (auto it = kv.find("MAGIC"); it == kv.end() || it->second != Magic) {
+        return false;
+    }
+
+    // 버전 문자열 (없으면 무시)
+    std::string versionStr;
+    if (auto it = kv.find("VERSION"); it != kv.end())
+        versionStr = it->second;
+
+    auto get = [&](const char* key) -> std::optional<std::string>
+        {
+            if (auto it = kv.find(key); it != kv.end()) return it->second;
+            return std::nullopt;
+        };
+
+    // 기본 검색 동작
+    if (auto v = get("bCaseSensitive"))   Options.bCaseSensitive = ParseBool(*v, false);
+    if (auto v = get("bWholeWord"))       Options.bWholeWord = ParseBool(*v, false);
+    if (auto v = get("bUseRegex"))        Options.bUseRegex = ParseBool(*v, false);
+
+    // 표시/뷰 동작
+    if (auto v = get("bEnablePreview"))   Options.bEnablePreview = ParseBool(*v, true);
+    if (auto v = get("bShowFileName"))    Options.bShowFileName = ParseBool(*v, true);
+    if (auto v = get("bShowSheetName"))   Options.bShowSheetName = ParseBool(*v, true);
+    if (auto v = get("bShowCellAddress")) Options.bShowCellAddress = ParseBool(*v, true);
+    if (auto v = get("bShowSnippet"))     Options.bShowSnippet = ParseBool(*v, true);
+
+    // 커스텀 메타 (호환 키 포함)
+    if (auto v = get("bUseCustomMeta"))          Options.bUseCustomMeta = ParseBool(*v, false);
+    else if (auto v2 = get("bUseCustomFilter"))  Options.bUseCustomMeta = ParseBool(*v2, false);
+    else if (auto v3 = get("bUseCustomFillter")) Options.bUseCustomMeta = ParseBool(*v3, false);
+
+    // 디버그 오버레이
+    if (auto v = get("bShowDebugOverlay")) Options.bShowDebugOverlay = ParseBool(*v, false);
+
+    // 커스텀 메타 라벨
+    Options.CustomMetadatas.clear();
+    int count = 0;
+    if (auto v = get("CustomMetadatasCount")) {
+        try { count = std::stoi(*v); }
+        catch (...) { count = 0; }
+    }
+    count = std::max(0, std::min(count, 256));
+
+    Options.CustomMetadatas.reserve(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        std::string key = "CustomMetadatas" + std::to_string(i);
+        if (auto it = kv.find(key); it != kv.end()) {
+            std::string v = it->second;
+            // 줄바꿈 치환은 저장 시 했으므로 여기선 그대로 사용
+            Options.CustomMetadatas.emplace_back(std::move(v));
+        }
+    }
+
+    return true;
+}
+
+
+void SearchOptionsWindow::WriteLine(std::ofstream& ofs, const std::string& k, const std::string& v)
+{
+    ofs << k << '=' << v << '\n';
+}
+
+void SearchOptionsWindow::WriteBool(std::ofstream& ofs, const char* k, bool v)
+{
+    WriteLine(ofs, k, v ? "1" : "0");
+}
+
+bool SearchOptionsWindow::ParseBool(const std::string& s, bool def)
+{
+    if (s == "1" || s == "true" || s == "True" || s == "TRUE") return true;
+    if (s == "0" || s == "false" || s == "False" || s == "FALSE") return false;
+    return def;
 }

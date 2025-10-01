@@ -22,12 +22,11 @@
 
 struct FViewState
 {
-    bool bEnablePreview = false;
+    bool bEnablePreview = true;
     bool bShowFilePath = true;
     bool bShowSheetName = true;
     bool bShowCellAddress = true;
     bool bShowSnippet = true;
-
     bool bUseCustomFilter = false;
 
     int  ColumnCount = 0;        // 위 플래그 합계
@@ -71,8 +70,8 @@ public:
 private:
     std::string currentKeyword; // 현재 검색중인 키워드
     std::vector<std::pair<std::string, std::string>> searchQueue; // 검색 대기(큐)
-    class SearchOptionsWindow SearchOptionsUI; // 검색 옵션 UI
-    class DebugLogWindow DebugLogUI;       // 디버그 로그 UI
+    class SearchOptionsWindow SearchOptions; // 검색 옵션 UI
+    class DebugLogWindow DebugLog;       // 디버그 로그 UI
 
     // 상태 체크용
 public:
@@ -85,10 +84,16 @@ private:
     bool bIsWindowOpen{ true }; // 윈도우창이 켜져 되어있는지 여부
     bool bIsSearching{ false }; // 현재 검색이 진행중인지 여부
     bool bHasSearched{ false }; // 검색한 적이 있는지 여부
-    struct FViewState CachedView; // 뷰 상태 캐시 (옵션 창에서 변경될 때마다 갱신)
     std::vector<std::string> CustomFilters; // 사용자 정의 필터 목록
 
+//====================================================================================
+//  Cached View
+//====================================================================================
+public:
+    struct FViewState CachedView; // 뷰 상태 캐시 (옵션 창에서 변경될 때마다 갱신)
 
+private:
+    void UpdateCachedView(class SearchOptionsWindow& InSearchOptions); // CachedView 갱신
 
 //====================================================================================
 //  엑셀 파일 검색 처리

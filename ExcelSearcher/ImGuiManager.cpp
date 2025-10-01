@@ -99,6 +99,18 @@ void ImGuiManager::Init()
         ImGuiFileDialog::Instance()->DeserializePlaces(data.str());
     }
 
+    // 검색 옵션 불러오기
+    if (SearchOptions.LoadFromFile())
+    {
+        // 로드 성공 시 현재 뷰 상태 캐시 갱신
+        UpdateCachedView(SearchOptions);
+    }
+    else
+    {
+        // 로드 실패 시 기본값으로 초기화
+        CachedView = FViewState();
+    }
+
 
     // 특정 파일 확장자 강조색
     {
@@ -139,12 +151,19 @@ bool ImGuiManager::IsDone() const
 
 void ImGuiManager::Release()
 {
+    // 즐겨찾기 저장
     std::ofstream ofs("bookmarks.dat", std::ios::binary);
     if (ofs)
     {
         std::string serialized = ImGuiFileDialog::Instance()->SerializePlaces();
 
         ofs.write(serialized.c_str(), serialized.size());
+    }
+
+    // 검색 옵션 저장
+    if (!SearchOptions.SaveToFile())
+    {
+        
     }
 
     // ImGui 셧다운 및 리소스 해제
@@ -323,15 +342,7 @@ void ImGuiManager::Update()
         if (ImGui::Button(u8"검색"))
         {
             // 검색 옵션 캐시 갱신
-            const auto& Opt = SearchOptionsUI.Get();
-            CachedView.bEnablePreview = Opt.bEnablePreview;
-            CachedView.bShowFilePath = Opt.bShowFileName;
-            CachedView.bShowSheetName = Opt.bShowSheetName;
-            CachedView.bShowCellAddress = Opt.bShowCellAddress;
-            CachedView.bShowSnippet = Opt.bShowSnippet;
-            CachedView.bUseCustomFilter = Opt.bUseCustomFillter;
-
-            CachedView.ColumnCount = SearchOptionsUI.GetMetaColumnCount();
+            UpdateCachedView(SearchOptions);
 
             // 선택된 파일 개수 초기화
             totalFilesCount = selectedFiles.size();
@@ -345,29 +356,29 @@ void ImGuiManager::Update()
             {
                 // 디버그용 (검색시작 알림, 키워드 버퍼 알림)
                 std::wstring wKeyword = SystemUtils::UTF8ToWString(keywordBuffer);
-                if (SearchOptionsUI.Get().bShowDebugOverlay)
+                if (SearchOptions.Get().bShowDebugOverlay)
                 {
-                    DebugLogUI.Add(L"검색을 시작합니다.", LogLevel::Info);
-                    DebugLogUI.AddFmt(LogLevel::Info, L"검색어: %s", wKeyword.c_str());
+                    DebugLog.Add(L"검색을 시작합니다.", LogLevel::Info);
+                    DebugLog.AddFmt(LogLevel::Info, L"검색어: %s", wKeyword.c_str());
 
                     // Options 정보 출력
-                    DebugLogUI.AddFmt(LogLevel::Info, L"기본 검색 동작: 대소문자 구분(%s), 정규식(%s), 전체 단어(%s), 미리보기(%s)",
-                        SearchOptionsUI.Get().bCaseSensitive    ? L"T" : L"F",
-                        SearchOptionsUI.Get().bUseRegex         ? L"T" : L"F",
-                        SearchOptionsUI.Get().bWholeWord        ? L"T" : L"F",
-                        SearchOptionsUI.Get().bEnablePreview    ? L"T" : L"F");
+                    DebugLog.AddFmt(LogLevel::Info, L"기본 검색 동작: 대소문자 구분(%s), 정규식(%s), 전체 단어(%s), 미리보기(%s)",
+                        SearchOptions.Get().bCaseSensitive ? L"T" : L"F",
+                        SearchOptions.Get().bUseRegex ? L"T" : L"F",
+                        SearchOptions.Get().bWholeWord ? L"T" : L"F",
+                        SearchOptions.Get().bEnablePreview ? L"T" : L"F");
 
-                    DebugLogUI.AddFmt(LogLevel::Info, L"추가 정보: 미리보기(%s), 파일 이름(%s), 시트 이름(%s), 셀 주소(%s), 스니펫(%s)",
-                        SearchOptionsUI.Get().bEnablePreview    ? L"T" : L"F",
-                        SearchOptionsUI.Get().bShowFileName     ? L"T" : L"F",
-                        SearchOptionsUI.Get().bShowSheetName    ? L"T" : L"F",
-                        SearchOptionsUI.Get().bShowCellAddress  ? L"T" : L"F",
-                        SearchOptionsUI.Get().bShowSnippet      ? L"T" : L"F");
+                    DebugLog.AddFmt(LogLevel::Info, L"추가 정보: 미리보기(%s), 파일 이름(%s), 시트 이름(%s), 셀 주소(%s), 스니펫(%s)",
+                        SearchOptions.Get().bEnablePreview ? L"T" : L"F",
+                        SearchOptions.Get().bShowFileName ? L"T" : L"F",
+                        SearchOptions.Get().bShowSheetName ? L"T" : L"F",
+                        SearchOptions.Get().bShowCellAddress ? L"T" : L"F",
+                        SearchOptions.Get().bShowSnippet ? L"T" : L"F");
 
-                    if (SearchOptionsUI.Get().bUseCustomFillter)
-                        {
+                    if (SearchOptions.Get().bUseCustomMeta)
+                    {
                         std::wstring metas = L"";
-                        for (const auto& meta : SearchOptionsUI.Get().CustomMetadatas)
+                        for (const auto& meta : SearchOptions.Get().CustomMetadatas)
                         {
                             metas += SystemUtils::UTF8ToWString(meta) + L", ";
                         }
@@ -375,11 +386,11 @@ void ImGuiManager::Update()
                         {
                             metas = metas.substr(0, metas.size() - 2); // 마지막 ", " 제거
                         }
-                        DebugLogUI.AddFmt(LogLevel::Info, L"커스텀 메타데이터: T(%s)", metas.c_str());
+                        DebugLog.AddFmt(LogLevel::Info, L"커스텀 메타데이터: T(%s)", metas.c_str());
                     }
                     else
                     {
-                        DebugLogUI.AddFmt(LogLevel::Info, L"커스텀 메타데이터: F");
+                        DebugLog.AddFmt(LogLevel::Info, L"커스텀 메타데이터: F");
                     }
                 }
             }
@@ -394,14 +405,14 @@ void ImGuiManager::Update()
 
         if (ImGui::Button(ICON_FA_GEAR))
         {
-            SearchOptionsUI.Open();
+            SearchOptions.Open();
         }
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip(u8"검색 옵션 설정\n검색 옵션을 설정하려면 이 버튼을 누르세요.");
         }
 
-        SearchOptionsUI.Draw();
+        SearchOptions.Draw();
 
         //------------------------------------------------------------------------
         // progress bar
@@ -440,18 +451,18 @@ void ImGuiManager::Update()
     //------------------------------------------------------------------------
     // debug log overlay
     //------------------------------------------------------------------------
-    bool show = SearchOptionsUI.Get().bShowDebugOverlay;
+    bool show = SearchOptions.Get().bShowDebugOverlay;
     if (show)
     {
         // 디버그 로그 창 그리기
-        DebugLogUI.DrawWindow(&show);
+        DebugLog.DrawWindow(&show);
 
         // x 버튼이 눌려서 창을 닫았을 때
-        if (show != SearchOptionsUI.Get().bShowDebugOverlay)
+        if (show != SearchOptions.Get().bShowDebugOverlay)
         {
-            auto cur = SearchOptionsUI.Get();   // 현재 옵션 복사
+            auto cur = SearchOptions.Get();   // 현재 옵션 복사
             cur.bShowDebugOverlay = show;       // false로 내려옴(창에서 X를 눌렀을 때 등)
-            SearchOptionsUI.Set(cur);           // ✅ 단일 진입로로 적용(캐시/동기화 포함)
+            SearchOptions.Set(cur);           // ✅ 단일 진입로로 적용(캐시/동기화 포함)
         }
     }
 }
@@ -528,11 +539,11 @@ void ImGuiManager::DrawResultsTable()
     }
 
     // 검색 옵션 Cache
-    const auto& Opt = SearchOptionsUI.Get();
-    
+    const auto& Opt = SearchOptions.Get();
+
     // 표 크기 지정
     ImVec2 resultSize(0, ImGui::GetTextLineHeightWithSpacing() * 15);
-    ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("SearchResults", resultSize, true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
     ImGuiTableFlags TableFlags =
         ImGuiTableFlags_ScrollY |          // 세로 스크롤
@@ -543,7 +554,7 @@ void ImGuiManager::DrawResultsTable()
 
     // 열 수(column count) 계산
     int BaseColumnCount = CachedView.ColumnCount;
-    int MetaColumnCount = (Opt.bUseCustomFillter ? (int)Opt.CustomMetadatas.size() : 0);
+    int MetaColumnCount = (Opt.bUseCustomMeta ? (int)Opt.CustomMetadatas.size() : 0);
     int TotalColumnCount = BaseColumnCount + MetaColumnCount;
 
     // 표 시작
@@ -560,7 +571,7 @@ void ImGuiManager::DrawResultsTable()
         if (CachedView.bShowSnippet) ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
 
         // 커스텀 메타데이터 컬럼 추가
-        if (Opt.bUseCustomFillter)
+        if (Opt.bUseCustomMeta)
         {
             for (const auto& label : Opt.CustomMetadatas)
             {
@@ -584,7 +595,7 @@ void ImGuiManager::DrawResultsTable()
 
                 // (행 높이 힌트: 내용이 대부분 1줄이면 켜면 좋음)
                 ImGui::TableNextRow(ImGuiTableRowFlags_None, ImGui::GetTextLineHeightWithSpacing());
-                
+
                 // 1열: 미리보기
                 if (CachedView.bEnablePreview)
                 {
@@ -740,6 +751,20 @@ void ImGuiManager::DrawResultsTable()
     ImGui::EndChild();
 }
 
+void ImGuiManager::UpdateCachedView(SearchOptionsWindow& InSearchOptions)
+{
+    const auto& Opt = InSearchOptions.Get();
+
+    CachedView.bEnablePreview = Opt.bEnablePreview;
+    CachedView.bShowFilePath = Opt.bShowFileName;
+    CachedView.bShowSheetName = Opt.bShowSheetName;
+    CachedView.bShowCellAddress = Opt.bShowCellAddress;
+    CachedView.bShowSnippet = Opt.bShowSnippet;
+    CachedView.bUseCustomFilter = Opt.bUseCustomMeta;
+
+    CachedView.ColumnCount = SearchOptions.GetMetaColumnCount();
+}
+
 bool ImGuiManager::StartSearch(const std::string& keyword)
 {
     // 키워드가 없거나, 선택된 파일이 없으면 return
@@ -782,14 +807,14 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
     std::wstring wfilePath = SystemUtils::UTF8ToWString(filePath);
 
     // 디버그용 검색옵션 bool 가져오기
-    bool bShowDebugLog = SearchOptionsUI.Get().bShowDebugOverlay;
+    bool bShowDebugLog = SearchOptions.Get().bShowDebugOverlay;
 
     if (bShowDebugLog)
     {
         // File Info
-        DebugLogUI.Add(L"===========================================", LogLevel::Separator);
-        DebugLogUI.Add(L"파일 이름: " + wfileName, LogLevel::File);
-        DebugLogUI.Add(L"전체 경로: " + wfilePath, LogLevel::File);
+        DebugLog.Add(L"===========================================", LogLevel::Separator);
+        DebugLog.Add(L"파일 이름: " + wfileName, LogLevel::File);
+        DebugLog.Add(L"전체 경로: " + wfilePath, LogLevel::File);
     }
 
     // 엑셀파일을 임시 디렉토리에 복사
@@ -806,9 +831,9 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
         if (bShowDebugLog)
         {
             int sheetcnt = doc.workbook().sheetCount();
-            DebugLogUI.AddFmt(LogLevel::File, L"시트 개수: %d", sheetcnt);
+            DebugLog.AddFmt(LogLevel::File, L"시트 개수: %d", sheetcnt);
         }
-         
+
         // 엑셀 문서 내의 모든 시트 반복
         for (const auto& sheetName : doc.workbook().worksheetNames())
         {
@@ -820,13 +845,13 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
             auto& st = MetaStatePerSheet[SheetKey(fileName, sheetName)];
             if (st.Pending.empty() && st.Found.empty())
             {
-                st = BuildMetaState(SearchOptionsUI.Get());
+                st = BuildMetaState(SearchOptions.Get());
             }
 
             // 시트 이름/행열 개수 출력
             if (bShowDebugLog)
             {
-                DebugLogUI.AddFmt(LogLevel::Sheet, L"시트: %ls  [rows %d] * [cols %d]",
+                DebugLog.AddFmt(LogLevel::Sheet, L"시트: %ls  [rows %d] * [cols %d]",
                     wSheetName.c_str(), sheet.rowCount(), sheet.columnCount());
             }
 
@@ -837,7 +862,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
                 {
                     if (bShowDebugLog)
                     {
-                        DebugLogUI.Add(L"해당 시트는 비어 있어 건너뜁니다: " + wSheetName, LogLevel::Error);
+                        DebugLog.Add(L"해당 시트는 비어 있어 건너뜁니다: " + wSheetName, LogLevel::Error);
                     }
 
                     continue;
@@ -848,7 +873,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
                 {
                     if (bShowDebugLog)
                     {
-                        DebugLogUI.Add(L"해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다: " + wSheetName, LogLevel::Error);
+                        DebugLog.Add(L"해당 시트는 셀의 개수가 비정상적으로 많아 건너뜁니다: " + wSheetName, LogLevel::Error);
                     }
 
                     //throw std::runtime_error("too large for range");
@@ -922,7 +947,7 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
 
         if (bShowDebugLog)
         {
-            DebugLogUI.Add(L"검색 완료. 문서를 닫습니다.", LogLevel::Info);
+            DebugLog.Add(L"검색 완료. 문서를 닫습니다.", LogLevel::Info);
         }
 
         // 엑셀 문서 닫기
@@ -933,11 +958,11 @@ void ImGuiManager::SearchInExcelFile(const std::string& keyword, const std::pair
         // 예외 발생 시 알림
         if (bShowDebugLog)
         {
-            DebugLogUI.Add(L"엑셀 파일을 여는 도중 오류가 발생했습니다.", LogLevel::Error);
-            DebugLogUI.Add(L"파일: " + wfilePath, LogLevel::Error);
+            DebugLog.Add(L"엑셀 파일을 여는 도중 오류가 발생했습니다.", LogLevel::Error);
+            DebugLog.Add(L"파일: " + wfilePath, LogLevel::Error);
 
             std::wstring wErr = SystemUtils::UTF8ToWString(ex.what());
-            DebugLogUI.Add(L"사유: " + wErr, LogLevel::Error);
+            DebugLog.Add(L"사유: " + wErr, LogLevel::Error);
         }
     }
 }
@@ -992,7 +1017,9 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
                 const OpenXLSX::XLCellReference metaRef(row, metaCol);
                 metaVal = GetCellText(sheet, metaRef);
             }
-            result.CustomMetadata[label] = metaVal;
+
+            // 결과에 저장
+            result.CustomMetadata[label] = std::move(metaVal);
         }
 
         // 해당 셀이 포함된 row 전체 내용 저장
@@ -1011,7 +1038,7 @@ bool ImGuiManager::IsValueMatch(const std::string& cellValue, const std::string&
 {
     if (keyword.empty()) return false;
 
-    const auto& Opt = SearchOptionsUI.Get();
+    const auto& Opt = SearchOptions.Get();
 
     try
     {
@@ -1056,11 +1083,11 @@ bool ImGuiManager::IsValueMatch(const std::string& cellValue, const std::string&
     catch (const std::regex_error& e)
     {
         // 잘못된 정규식 등 오류 시, 디버그 오버레이에 알림
-        if (SearchOptionsUI.Get().bShowDebugOverlay)
+        if (SearchOptions.Get().bShowDebugOverlay)
         {
             std::wstring wMsg = L"정규식 오류: ";
             wMsg += SystemUtils::UTF8ToWString(e.what());
-            DebugLogUI.Add(wMsg, LogLevel::Error);
+            DebugLog.Add(wMsg, LogLevel::Error);
         }
         return false;
     }
@@ -1148,7 +1175,7 @@ std::vector<std::string> ImGuiManager::GetFullRowData(OpenXLSX::XLWorksheet& she
 FSheetMetaState ImGuiManager::BuildMetaState(const FSearchOptions& Opt)
 {
     FSheetMetaState st;
-    if (!Opt.bUseCustomFillter) return st;
+    if (!Opt.bUseCustomMeta) return st;
 
 
     for (auto& raw : Opt.CustomMetadatas)
@@ -1179,9 +1206,9 @@ inline void ImGuiManager::TryResolveMetaCol(const std::string& cellText, uint32_
     st.Found.emplace(col, cellText);
     st.Pending.erase(it);
 
-    if (SearchOptionsUI.Get().bShowDebugOverlay)
+    if (SearchOptions.Get().bShowDebugOverlay)
     {
-        DebugLogUI.AddFmt(LogLevel::Info, L"[Meta-Match] col=%u  label=\"%ls\"  (Pending->Found, 남은=%d)",
+        DebugLog.AddFmt(LogLevel::Info, L"[Meta-Match] col=%u  label=\"%ls\"  (Pending->Found, 남은=%d)",
             (unsigned)col,
             SystemUtils::UTF8ToWString(cellText).c_str(),
             (int)(st.Pending.size()));

@@ -1,0 +1,14 @@
+MAGIC=EXCEL_SEARCHER_SEARCH_OPTIONS
+VERSION=1.1
+bCaseSensitive=0
+bWholeWord=0
+bUseRegex=0
+bEnablePreview=1
+bShowFileName=1
+bShowSheetName=1
+bShowCellAddress=1
+bShowSnippet=1
+bUseCustomMeta=1
+bShowDebugOverlay=0
+CustomMetadatasCount=1
+CustomMetadatas0=부서
