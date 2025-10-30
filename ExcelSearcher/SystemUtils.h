@@ -11,6 +11,9 @@ public:
     // Windows의 알려진 폴더 경로를 가져옴
     static std::string GetKnownFolder(REFKNOWNFOLDERID folderId);
 
+    // 기본 결과 파일 이름 생성 (예: ExcelSearchResults_20231015_153045.xlsx)
+    static std::string MakeDefaultResultFileName();
+
     // 자주 쓰는 경로들 편의 함수
     static std::string GetDownloads();
     static std::string GetDocuments();
@@ -28,4 +31,7 @@ public:
 
     // 문자열 공백 제거
     static std::string Trim(const std::string& str);
+
+    // 부모 디렉토리 경로 가져오기
+    static std::string GetParentDirectory(const std::string& path);
 };

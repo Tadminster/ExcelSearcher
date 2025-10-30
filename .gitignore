@@ -36,3 +36,8 @@
 # Build directories
 /ExcelSearcher/Release
 /ExcelSearcher/Debug
+/ExcelSearcher/bookmarks.dat
+/ExcelSearcher/SearchOptions.dat
+/ExcelSearcher/imgui.ini
+/ExcelSearcher/bookmarks.dat
+/ExcelSearcher/imgui.ini

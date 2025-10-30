@@ -8,6 +8,7 @@
 
 #include <ImGuiFileDialog.h>
 #include <OpenXLSX.hpp>
+#include <filesystem>
 
 #include "SystemUtils.h"
 
@@ -163,7 +164,7 @@ void ImGuiManager::Release()
     // 검색 옵션 저장
     if (!SearchOptions.SaveToFile())
     {
-        
+
     }
 
     // ImGui 셧다운 및 리소스 해제
@@ -530,6 +531,26 @@ void ImGuiManager::DrawResultsTable()
     ImGui::Separator();
     ImGui::Text(u8"검색 결과: %d개 일치", searchResults.size());
 
+    // 같은 라인에서 오른쪽 정렬
+    float buttonWidth = 40.0f;
+    float rightX = ImGui::GetContentRegionAvail().x - buttonWidth;
+    ImGui::SameLine(rightX > 0 ? rightX : 0);
+
+    // 검색이 모두 완료되었다면
+    if (!bIsSearching && bHasSearched)
+    {
+        // 결과 내보내기 버튼
+        if (ImGui::Button(ICON_FA_FLOPPY_DISK, ImVec2(buttonWidth, 0)))
+        {
+            ExportSearchResultsOpenDialog(searchResults);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(u8"검색 결과 내보내기\n검색 결과를 Excel 파일로 저장합니다.");
+        }
+    }
+
+
     // 컬럼이 하나도 없으면 메시지 출력 후 종료
     if (CachedView.ColumnCount <= 0)
     {
@@ -554,7 +575,7 @@ void ImGuiManager::DrawResultsTable()
 
     // 열 수(column count) 계산
     int BaseColumnCount = CachedView.ColumnCount;
-    int MetaColumnCount = (Opt.bUseCustomMeta ? (int)Opt.CustomMetadatas.size() : 0);
+    int MetaColumnCount = (CachedView.bUseCustomMeta ? (int)Opt.CustomMetadatas.size() : 0);
     int TotalColumnCount = BaseColumnCount + MetaColumnCount;
 
     // 표 시작
@@ -571,7 +592,7 @@ void ImGuiManager::DrawResultsTable()
         if (CachedView.bShowSnippet) ImGui::TableSetupColumn(u8"내용", ImGuiTableColumnFlags_WidthStretch);
 
         // 커스텀 메타데이터 컬럼 추가
-        if (Opt.bUseCustomMeta)
+        if (CachedView.bUseCustomMeta)
         {
             for (const auto& label : Opt.CustomMetadatas)
             {
@@ -615,16 +636,16 @@ void ImGuiManager::DrawResultsTable()
                     {
                         // 메타 요약
                         ImGui::Text("%s | %s | %s",
-                            result.fileName.c_str(),
-                            result.sheetName.c_str(),
-                            result.cellAddress.c_str());
+                            result.FileName.c_str(),
+                            result.SheetName.c_str(),
+                            result.CellAddress.c_str());
                         ImGui::Separator();
 
                         // 스크롤 가능한 본문
                         ImGui::BeginChild("row_tip", ImVec2(800, 100), true,
                             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
 
-                        if (result.fullRowData.empty())
+                        if (result.FullRowData.empty())
                         {
                             ImGui::TextUnformatted(u8"(표시할 값이 없습니다)");
                         }
@@ -634,7 +655,7 @@ void ImGuiManager::DrawResultsTable()
                             static const float maxCellWidth = 400.0f;
 
                             bool first = true;
-                            for (const auto& text : result.fullRowData)
+                            for (const auto& text : result.FullRowData)
                             {
                                 if (text.empty()) continue;
 
@@ -659,7 +680,7 @@ void ImGuiManager::DrawResultsTable()
                         if (ImGui::Button(u8"복사"))
                         {
                             std::string buf; buf.reserve(4096);
-                            for (const auto& v : result.fullRowData)
+                            for (const auto& v : result.FullRowData)
                             {
                                 if (!v.empty())
                                 {
@@ -690,21 +711,21 @@ void ImGuiManager::DrawResultsTable()
                 if (CachedView.bShowFilePath)
                 {
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(result.fileName.c_str());
+                    ImGui::TextUnformatted(result.FileName.c_str());
                 }
 
                 // 3열: 시트명
                 if (CachedView.bShowSheetName)
                 {
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(result.sheetName.c_str());
+                    ImGui::TextUnformatted(result.SheetName.c_str());
                 }
 
                 // 4열: 위치(셀 주소)
                 if (CachedView.bShowCellAddress)
                 {
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(result.cellAddress.c_str());
+                    ImGui::TextUnformatted(result.CellAddress.c_str());
                 }
 
                 // 5열: 내용
@@ -712,7 +733,7 @@ void ImGuiManager::DrawResultsTable()
                 {
                     ImGui::TableNextColumn();
                     // 래핑을 쓰면 행 높이가 가변
-                    ImGui::TextWrapped("%s", result.cellValue.c_str());
+                    ImGui::TextWrapped("%s", result.CellValue.c_str());
                 }
 
                 // 커스텀 메타데이터 컬럼
@@ -749,6 +770,8 @@ void ImGuiManager::DrawResultsTable()
     }
 
     ImGui::EndChild();
+
+    ExportSearchResultsDrawModal();
 }
 
 void ImGuiManager::UpdateCachedView(SearchOptionsWindow& InSearchOptions)
@@ -760,7 +783,7 @@ void ImGuiManager::UpdateCachedView(SearchOptionsWindow& InSearchOptions)
     CachedView.bShowSheetName = Opt.bShowSheetName;
     CachedView.bShowCellAddress = Opt.bShowCellAddress;
     CachedView.bShowSnippet = Opt.bShowSnippet;
-    CachedView.bUseCustomFilter = Opt.bUseCustomMeta;
+    CachedView.bUseCustomMeta = Opt.bUseCustomMeta;
 
     CachedView.ColumnCount = SearchOptions.GetMetaColumnCount();
 }
@@ -991,10 +1014,10 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
     {
         // 검색 결과 저장
         ExcelSearchResult result;
-        result.fileName = fileName;
-        result.sheetName = sheetName;
-        result.cellAddress = cellRef.address();
-        result.cellValue = cellText;
+        result.FileName = fileName;
+        result.SheetName = sheetName;
+        result.CellAddress = cellRef.address();
+        result.CellValue = cellText;
 
 
         // 같은 행의 메타 열 값들 부착
@@ -1023,7 +1046,7 @@ bool ImGuiManager::ProcessCell(OpenXLSX::XLWorksheet& sheet,
         }
 
         // 해당 셀이 포함된 row 전체 내용 저장
-        result.fullRowData = GetFullRowData(sheet, row);
+        result.FullRowData = GetFullRowData(sheet, row);
 
         // 결과 벡터에 추가
         searchResults.emplace_back(result);
@@ -1215,6 +1238,310 @@ inline void ImGuiManager::TryResolveMetaCol(const std::string& cellText, uint32_
     }
 }
 
+void ImGuiManager::ExportSearchResultsOpenDialog(const std::vector<ExcelSearchResult>& results)
+{
+    // 검색 결과가 없으면 리턴
+    if (results.empty())
+    {
+        return;
+    }
+
+    // 결과를 캐시
+    g_ExportCachedResults = results;
+    // 기본 파일명 생성
+    g_ExportDefaultFile = SystemUtils::MakeDefaultResultFileName();
+
+    // 저장 다이얼로그 열기
+    IGFD::FileDialogConfig cfg;
+    cfg.path = ".";                     // 탐색 경로를 기본으로 설정(현재 디렉토리)
+    cfg.fileName = g_ExportDefaultFile.c_str();
+    cfg.countSelectionMax = 1;          // 단일 파일 선택만 허용
+    cfg.flags = ImGuiFileDialogFlags_ConfirmOverwrite;  // 덮어쓰기 경고
+
+    ImGuiFileDialog::Instance()->OpenDialog(
+        kExportDialogKey,
+        kExportDialogTitle,
+        kFilters,
+        cfg);
+
+    // 다음 프레임에서 display 처리하도록 플래그 설정
+    g_ExportDialogRequested = true;
+}
+
+void ImGuiManager::ExportSearchResultsDrawModal()
+{
+    // 저장 불가 알림 팝업
+    if (ImGui::BeginPopupModal("NoResultsToExport", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(u8"내보낼 검색 결과가 없습니다.");
+        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    // 다이얼로그 표시
+    if (g_ExportDialogRequested &&
+        ImGuiFileDialog::Instance()->Display(kExportDialogKey,
+            ImGuiWindowFlags_NoCollapse, ImVec2(720, 480)))
+    {
+        if (ImGuiFileDialog::Instance()->IsOk())
+        {
+            // 선택된 경로 획득
+            std::string UserInputPath = ImGuiFileDialog::Instance()->GetFilePathName();
+
+            // 확장자 검사 및 보정 (.xlsx)
+            UserInputPath = EnsureXlsxExtension(std::move(UserInputPath));
+
+            // 엑셀 파일로 저장
+            const bool ok = SaveSearchResultsToExcel(g_ExportCachedResults, UserInputPath);
+
+            // 결과 팝업
+            if (ok)  ImGui::OpenPopup("SaveSuccess");
+            else     ImGui::OpenPopup("SaveFailed");
+        }
+
+        // 다이얼로그 닫기 및 플래그 초기화
+        ImGuiFileDialog::Instance()->Close();
+        g_ExportDialogRequested = false;
+        g_ExportCachedResults.clear();
+    }
+
+    // 저장 성공/실패 피드백 팝업
+    if (ImGui::BeginPopupModal("SaveSuccess", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(u8"검색 결과가 Excel 파일로 저장되었습니다.");
+        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("SaveFailed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(u8"저장 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.");
+        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+}
+
+bool ImGuiManager::SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>& Results, const std::string& UesrInputPath)
+{
+    // 필요한 변수들 get
+    bool bShowDebugLog = SearchOptions.Get().bShowDebugOverlay; // 디버그 로그 출력 여부
+    const auto& Opt = SearchOptions.Get();                      // 커스텀 메타데이터 라벨 참조용
+
+    if (Results.empty())
+    {
+        if (bShowDebugLog)
+        {
+            DebugLog.Add(L"저장할 검색 결과가 없습니다.", LogLevel::Warning);
+        }
+
+        return false;
+    }
+
+    try
+    {
+        // 디버그 로그
+        if (bShowDebugLog)
+        {
+            DebugLog.Add(L"===========================================", LogLevel::Separator);
+            DebugLog.Add(L"검색 결과를 엑셀 파일로 저장합니다.", LogLevel::Info);
+            DebugLog.AddFmt(LogLevel::Info, L"전체 경로: %ls", SystemUtils::UTF8ToWString(UesrInputPath).c_str());
+        }
+
+        // 유저 입력 경로에서 부모 디렉토리 추출
+        std::string ParentDir = SystemUtils::GetParentDirectory(UesrInputPath);
+        // 임시 엑셀 파일 경로 생성
+        std::string TempFilePath = ParentDir + "\\" + EnsureXlsxExtension(g_ExportDefaultFile);
+
+
+        // ----------------------------------- 엑셀 파일 생성 -----------------------------------
+        OpenXLSX::XLDocument doc;
+        doc.create(TempFilePath);                   // 새 엑셀 파일 생성
+        auto wb = doc.workbook();                   // 워크북 가져오기
+        auto ws = wb.worksheet("Sheet1");           // 기본 시트 가져오기
+        ws.setName("Results");                      // 시트 이름 변경
+
+
+        // ----------------------------------- 헤더 구성 -----------------------------------
+        // 헤더를 담을 벡터
+        std::vector<std::string> headers;
+        // 헤더 크기 예약 (기본 4개 + 커스텀 메타데이터 개수)
+        headers.reserve(4 + SearchOptions.Get().CustomMetadatas.size());
+
+        // 기본 헤더 추가
+        headers.emplace_back(u8"파일");
+        headers.emplace_back(u8"시트");
+        headers.emplace_back(u8"위치");
+        headers.emplace_back(u8"내용");
+
+        // 메타 데이터에 따라 헤더 추가
+        if (CachedView.bUseCustomMeta)
+        {
+            for (const auto& label : Opt.CustomMetadatas)
+            {
+                headers.emplace_back(label);
+            }
+        }
+
+        // ----------------------------------- 데이터 작성 -----------------------------------
+        // 헤더 작성 (1행)
+        for (int i = 0; i < (int)headers.size(); ++i)
+        {
+            ws.cell(OpenXLSX::XLCellReference(/*row*/1, /*col*/ i + 1)).value() = headers[i];
+        }
+
+        // 셀 값 앞에 특수문자가 오면 엑셀에서 수식으로 인식하는 문제 방지용 람다
+        auto sanitize = [](const std::string& s) -> std::string
+            {
+                if (s.empty()) return s;
+                const char ch = s[0];
+                if (ch == '=' || ch == '+' || ch == '-' || ch == '@')
+                {
+                    return std::string(1, '\'') + s; // 안전하게 문자열 생성
+                }
+                return s;
+            };
+
+
+        // 결과 데이터 작성 (2행부터)
+        int row = 2;
+
+        // 미리 메타 라벨 목록을 보존 (라벨 순서대로 값을 꺼내기 위함)
+        std::vector<std::string> metaLabels;
+        if (Opt.bUseCustomMeta)
+        {
+            metaLabels = Opt.CustomMetadatas;
+        }
+
+        for (const auto& r : Results)
+        {
+            int col = 1;
+
+            // 기본 컬럼 작성
+            ws.cell(OpenXLSX::XLCellReference(row, col++)).value() = sanitize(r.FileName);      // 파일명
+            ws.cell(OpenXLSX::XLCellReference(row, col++)).value() = sanitize(r.SheetName);     // 시트명
+            ws.cell(OpenXLSX::XLCellReference(row, col++)).value() = sanitize(r.CellAddress);   // 셀 주소
+            ws.cell(OpenXLSX::XLCellReference(row, col++)).value() = sanitize(r.CellValue);     // 셀 내용
+
+            // 커스텀 메타데이터
+            if (!metaLabels.empty())
+            {
+                // 메타데이터 라벨을 순회하며
+                for (const auto& label : metaLabels)
+                {
+                    std::string val;
+                    // 라벨과 완전 일치하는 키가 있으면 해당 값을 사용
+                    if (auto it = r.CustomMetadata.find(label); it != r.CustomMetadata.end())
+                    {
+                        val = it->second;
+                    }
+                    // 없으면
+                    else
+                    {
+                        // 매치된 값이 있는지 확인용 플래그
+                        bool bFound = false;
+
+                        // 대소문자 구분 없이 재탐색
+                        const auto wantLower = SystemUtils::ToLower(label);
+                        for (const auto& kv : r.CustomMetadata) {
+                            if (SystemUtils::ToLower(kv.first) == wantLower)
+                            {
+                                val = kv.second;
+                                bFound = true;
+                                break;
+                            }
+                        }
+
+                        // 매치된 값이 없으면 빈문자열
+                        if (!bFound)
+                        {
+                            val = "";
+                        }
+                    }
+
+                    // 메타데이터 값 작성
+                    ws.cell(OpenXLSX::XLCellReference(row, col++)).value() = sanitize(val);
+                }
+            }
+
+            ++row;
+        }
+
+        // 저장/닫기
+        doc.save();
+        doc.close();
+
+        // 디버그 로그
+        if (bShowDebugLog)
+        {
+            DebugLog.Add(L"엑셀 저장 완료.", LogLevel::Info);
+        }
+
+        // 임시 파일 → 최종 유저 파일명으로 변경
+        std::wstring wTemp = SystemUtils::UTF8ToWString(TempFilePath);
+        std::wstring wFinal = SystemUtils::UTF8ToWString(UesrInputPath);
+
+        // 같은 드라이브라면 빠른 rename, 이미 존재하면 덮어쓰기
+        if (MoveFileExW(wTemp.c_str(), wFinal.c_str(), MOVEFILE_REPLACE_EXISTING))
+        {
+        //    if (bShowDebugLog)
+        //    {
+        //        DebugLog.AddFmt(LogLevel::Info, L"파일 이름 변경 완료: %ls", wFinal.c_str());
+        //    }
+        }
+        else
+        {
+            DWORD err = GetLastError();
+            if (bShowDebugLog)
+            {
+                DebugLog.AddFmt(LogLevel::Error, L"파일 이름 변경 실패 (WinErr=%lu)", err);
+            }
+            return false;
+        }
+
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        // 예외 발생 시 디버그 로그
+        if (bShowDebugLog)
+        {
+            DebugLog.AddFmt(LogLevel::Error, L"엑셀 저장 실패: %ls", SystemUtils::UTF8ToWString(e.what()).c_str());
+        }
+
+        return false;
+    }
+}
+
+std::string ImGuiManager::EnsureXlsxExtension(std::string path)
+{
+    try
+    {
+        // UTF-8 문자열을 wide 문자열으로 변환
+        std::wstring wPath = SystemUtils::UTF8ToWString(path);
+
+        // wide 기반으로 확장자 확인/수정
+        std::filesystem::path p(wPath);
+        if (p.extension() != L".xlsx")
+            p.replace_extension(L".xlsx");
+
+        // 다시 UTF-8 문자열으로 반환
+        return SystemUtils::WStringToUTF8(p.wstring());
+    }
+    catch (...)
+    {
+        // 파일명에 한글이 있어도 죽지 않게 예외 흡수
+        // 단순 문자열로 ".xlsx"만 보장
+        std::string safe = path;
+        auto ends_with = [](const std::string& s, const std::string& suf)
+            {
+                return s.size() >= suf.size() &&
+                    std::equal(suf.rbegin(), suf.rend(), s.rbegin(),
+                        [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+            };
+        if (!ends_with(safe, ".xlsx"))
+            safe += ".xlsx";
+        return safe;
+    }
+}
 
 bool ImGuiManager::ContainsIgnoreCase(const std::string& cellValue, const std::string& keyword)
 {

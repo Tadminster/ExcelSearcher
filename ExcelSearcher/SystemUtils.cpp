@@ -2,6 +2,10 @@
 #include <codecvt>
 #include <locale>
 #include <algorithm>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
+#include <filesystem>
 
 
 std::string SystemUtils::WStringToUTF8(const std::wstring& wstr)
@@ -68,6 +72,29 @@ std::string SystemUtils::GetKnownFolder(REFKNOWNFOLDERID folderId)
     return "";
 }
 
+std::string SystemUtils::MakeDefaultResultFileName()
+{
+    // 현재 시간 가져오기
+    auto now = std::chrono::system_clock::now();
+    // 시간을 시간_t로 변환
+    auto tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+
+    // 지역 시간으로 변환
+#ifdef _WIN32
+    localtime_s(&tm, &tt);
+#else
+    localtime_r(&tt, &tm);
+#endif
+
+    // 형식화된 문자열 생성
+    std::ostringstream oss;
+    oss << "ExcelSearch_"
+        << std::put_time(&tm, "%Y%m%d_%H%M%S");
+
+    return oss.str();
+}
+
 std::string SystemUtils::GetDownloads()
 {
     return GetKnownFolder(FOLDERID_Downloads);
@@ -81,4 +108,12 @@ std::string SystemUtils::GetDocuments()
 std::string SystemUtils::GetDesktop()
 {
     return GetKnownFolder(FOLDERID_Desktop);
+}
+
+std::string SystemUtils::GetParentDirectory(const std::string& path)
+{
+    std::filesystem::path p = SystemUtils::UTF8ToWString(path);
+    std::filesystem::path parent = p.parent_path();
+
+    return SystemUtils::WStringToUTF8(parent.wstring());
 }

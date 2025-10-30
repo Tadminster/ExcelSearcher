@@ -29,12 +29,12 @@ inline std::string SheetKey(const std::string& file, const std::string& sheet)
 // ============================================================================
 struct ExcelSearchResult
 {
-    std::string fileName;   // 엑셀 파일 이름
-    std::string sheetName;  // 시트 이름
-    std::string cellAddress;// 셀 주소
-    std::string cellValue;  // 셀 값
+    std::string FileName;   // 엑셀 파일 이름
+    std::string SheetName;  // 시트 이름
+    std::string CellAddress;// 셀 주소
+    std::string CellValue;  // 셀 값
     std::unordered_map<std::string, std::string> CustomMetadata; // 커스텀 메타데이터 (키-값 쌍)
 
-    std::vector<std::string> fullRowData; // 셀이 포함된 행의 전체 데이터
+    std::vector<std::string> FullRowData; // 셀이 포함된 행의 전체 데이터
 };
 

@@ -544,7 +544,7 @@ bool SearchOptionsWindow::LoadFromFile()
     std::unordered_map<std::string, std::string> kv;
     std::string line;
     while (std::getline(ifs, line)) {
-        // 🔹 CRLF 안전 처리 (Windows에서 '\r' 남는 경우 제거)
+        // CRLF 안전 처리 (윈도우에서 \r 남는 경우 제거)
         if (!line.empty() && line.back() == '\r')
             line.pop_back();
 
@@ -554,7 +554,7 @@ bool SearchOptionsWindow::LoadFromFile()
         std::string k = line.substr(0, pos);
         std::string v = line.substr(pos + 1);
 
-        // 여기서는 Trim 제거 → 앞뒤 공백은 보존
+        // Trim 제거
         kv.emplace(std::move(k), std::move(v));
     }
 

@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <optional>
+#include <filesystem>
 
 // 외부 라이브러리 헤더
 #include <imgui.h>
@@ -27,7 +28,7 @@ struct FViewState
     bool bShowSheetName = true;
     bool bShowCellAddress = true;
     bool bShowSnippet = true;
-    bool bUseCustomFilter = false;
+    bool bUseCustomMeta = false;
 
     int  ColumnCount = 0;        // 위 플래그 합계
 };
@@ -111,6 +112,26 @@ private:
 
     FSheetMetaState BuildMetaState(const FSearchOptions& Opt); // 커스텀 메타데이터 상태 구축
     inline void TryResolveMetaCol(const std::string& cellText, uint32_t col, FSheetMetaState& st); // 커스텀 메타데이터 열 확인 및 저장
+
+
+//====================================================================================
+//  엑셀 파일 내보내기
+//====================================================================================
+private:
+    bool                                g_ExportDialogRequested = false;
+    std::vector<ExcelSearchResult>      g_ExportCachedResults;  // 버튼 클릭 시점의 결과 스냅샷
+    std::string                         g_ExportDefaultFile;    // "Result_YYYYMMDD_HHMM.xlsx"
+    const char*                         kExportDialogKey = "SaveResultsDlg";
+    const char*                         kExportDialogTitle = u8"결과를 Excel로 저장";
+    const char*                         kFilters = "Excel (*.xlsx){.xlsx}";
+
+    // 검색 결과 내보내기(저장)
+    void ExportSearchResultsOpenDialog(const std::vector<ExcelSearchResult>& results);
+    void ExportSearchResultsDrawModal();
+    bool SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>& Results, const std::string& UesrInputPath);
+
+    // .xlsx 확장자 보장
+    std::string EnsureXlsxExtension(std::string path);
 
 
 //====================================================================================

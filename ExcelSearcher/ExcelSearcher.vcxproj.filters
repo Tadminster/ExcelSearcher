@@ -42,6 +42,9 @@
     <ClInclude Include="DebugLogWindow.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="..\ThirdParty\OpenXLSX\external\zippy\zippy.hpp">
+      <Filter>OpenXLSX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
