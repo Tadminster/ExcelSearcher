@@ -9,6 +9,6 @@ bShowSheetName=1
 bShowCellAddress=1
 bShowSnippet=1
 bUseCustomMeta=1
-bShowDebugOverlay=1
+bShowDebugOverlay=0
 CustomMetadatasCount=1
 CustomMetadatas0=부서

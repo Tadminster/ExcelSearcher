@@ -932,6 +932,7 @@ public:
     std::string GetCurrentPath();                                                                            // will return current file path
     std::string GetCurrentFilter();                                                                          // will return current filter
     UserDatas GetUserDatas() const;                                                                          // will return user datas send with Open Dialog
+    void SetFileNameBuffer(const char* text);
 
     // file style by extentions
     void SetFileStyle(                                        // SetExtention datas for have custom display of particular file type

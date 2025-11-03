@@ -117,3 +117,61 @@ std::string SystemUtils::GetParentDirectory(const std::string& path)
 
     return SystemUtils::WStringToUTF8(parent.wstring());
 }
+
+std::string SystemUtils::RemoveFileExtension(const std::string& filename)
+{
+    try
+    {
+        // UTF8에서 wstring으로 변환 후 path 생성
+        std::wstring wpath = SystemUtils::UTF8ToWString(filename);
+        std::filesystem::path p(wpath);
+
+        // 확장자 제거
+        p.replace_extension();
+
+        // 다시 wstring에서 UTF8로 변환 후 반환
+        return SystemUtils::WStringToUTF8(p.wstring());
+    }
+    // 예외 발생 시 fallback
+    catch (...)
+    {
+        // 마지막 . 이후 제거
+        std::string result = filename;
+        size_t dot = result.find_last_of('.');
+        if (dot != std::string::npos)
+            result.erase(dot);
+
+        return result;
+    }
+}
+
+std::string SystemUtils::EnsureExtension(std::string path, const std::string& extension)
+{
+    try
+    {
+        // UTF-8 문자열을 wide 문자열으로 변환
+        std::wstring wPath = SystemUtils::UTF8ToWString(path);
+
+        // wide 기반으로 확장자 확인/수정
+        std::filesystem::path p(wPath);
+        if (p.extension() != extension)
+            p.replace_extension(extension);
+
+        // 다시 UTF-8 문자열으로 반환
+        return SystemUtils::WStringToUTF8(p.wstring());
+    }
+    catch (...)
+    {
+        // 파일명에 한글이 있어도 죽지 않게 예외 흡수
+        std::string safe = path;
+        auto ends_with = [](const std::string& s, const std::string& suf)
+            {
+                return s.size() >= suf.size() &&
+                    std::equal(suf.rbegin(), suf.rend(), s.rbegin(),
+                        [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+            };
+        if (!ends_with(safe, extension))
+            safe += extension;
+        return safe;
+    }
+}

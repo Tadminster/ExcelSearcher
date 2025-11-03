@@ -118,20 +118,20 @@ private:
 //  엑셀 파일 내보내기
 //====================================================================================
 private:
-    bool                                g_ExportDialogRequested = false;
-    std::vector<ExcelSearchResult>      g_ExportCachedResults;  // 버튼 클릭 시점의 결과 스냅샷
-    std::string                         g_ExportDefaultFile;    // "Result_YYYYMMDD_HHMM.xlsx"
-    const char*                         kExportDialogKey = "SaveResultsDlg";
-    const char*                         kExportDialogTitle = u8"결과를 Excel로 저장";
-    const char*                         kFilters = "Excel (*.xlsx){.xlsx}";
+    bool                                bExportDialogRequested = false;
+    std::vector<ExcelSearchResult>      ExportCachedResults;  // 버튼 클릭 시점의 결과 스냅샷
+    std::string                         ExportFileName;    // "Result_YYYYMMDD_HHMM.xlsx"
+    const char*                         ExportDialogKey = "SaveResultsDlg";
+    const char*                         ExportDialogTitle = u8"저장할 폴더 선택";
+    const char*                         ExportFilters = "Excel (*.xlsx){.xlsx}";
+
+    double s_LastBeat = 0.0;     // 마지막 파일 이름 버퍼 갱신 시각
+    const double beatInterval = 0.5;    // 파일 이름 버퍼 갱신 주기
 
     // 검색 결과 내보내기(저장)
     void ExportSearchResultsOpenDialog(const std::vector<ExcelSearchResult>& results);
-    void ExportSearchResultsDrawModal();
+    void ExportFolderSeleterModalDraw();
     bool SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>& Results, const std::string& UesrInputPath);
-
-    // .xlsx 확장자 보장
-    std::string EnsureXlsxExtension(std::string path);
 
 
 //====================================================================================

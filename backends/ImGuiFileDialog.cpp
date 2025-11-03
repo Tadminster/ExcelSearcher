@@ -4770,6 +4770,14 @@ IGFD::UserDatas IGFD::FileDialog::GetUserDatas() const {
     return m_FileDialogInternal.getDialogConfig().userDatas;
 }
 
+void IGFD::FileDialog::SetFileNameBuffer(const char* text)
+{
+    auto& fm = m_FileDialogInternal.fileManager;
+    IGFD::Utils::SetBuffer(fm.fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, text);
+
+    fm.SetDefaultFileName(text);
+}
+
 bool IGFD::FileDialog::IsOk() const {
     return m_FileDialogInternal.isOk;
 }

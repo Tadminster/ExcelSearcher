@@ -34,4 +34,11 @@ public:
 
     // 부모 디렉토리 경로 가져오기
     static std::string GetParentDirectory(const std::string& path);
+
+    // 파일명에서 확장자 제거
+    static std::string RemoveFileExtension(const std::string& filename);
+
+    // 확장자 보장 함수
+    static std::string EnsureExtension(std::string path, const std::string& extension);
+
 };

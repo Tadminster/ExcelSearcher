@@ -771,7 +771,8 @@ void ImGuiManager::DrawResultsTable()
 
     ImGui::EndChild();
 
-    ExportSearchResultsDrawModal();
+    // 엑셀 내보내기 폴더 선택 모달
+    ExportFolderSeleterModalDraw();
 }
 
 void ImGuiManager::UpdateCachedView(SearchOptionsWindow& InSearchOptions)
@@ -1240,82 +1241,113 @@ inline void ImGuiManager::TryResolveMetaCol(const std::string& cellText, uint32_
 
 void ImGuiManager::ExportSearchResultsOpenDialog(const std::vector<ExcelSearchResult>& results)
 {
-    // 검색 결과가 없으면 리턴
     if (results.empty())
     {
+        ImGui::OpenPopup("NoResultsToExport");
         return;
     }
 
-    // 결과를 캐시
-    g_ExportCachedResults = results;
+    // 결과/상태 캐시
+    ExportCachedResults = results;
+
     // 기본 파일명 생성
-    g_ExportDefaultFile = SystemUtils::MakeDefaultResultFileName();
+    ExportFileName = SystemUtils::MakeDefaultResultFileName(); // e.g. "ExcelSearch_20251030_003557.xlsx"
 
-    // 저장 다이얼로그 열기
+    // 다이얼로그 설정
     IGFD::FileDialogConfig cfg;
-    cfg.path = ".";                     // 탐색 경로를 기본으로 설정(현재 디렉토리)
-    cfg.fileName = g_ExportDefaultFile.c_str();
-    cfg.countSelectionMax = 1;          // 단일 파일 선택만 허용
-    cfg.flags = ImGuiFileDialogFlags_ConfirmOverwrite;  // 덮어쓰기 경고
+    cfg.path = ".";                                 // 시작 경로
+    cfg.fileName = ExportFileName.c_str();     // 초기 파일명
+    cfg.countSelectionMax = 1;
+    cfg.flags = ImGuiFileDialogFlags_ConfirmOverwrite;
 
+    // 열기
     ImGuiFileDialog::Instance()->OpenDialog(
-        kExportDialogKey,
-        kExportDialogTitle,
-        kFilters,
-        cfg);
+        ExportDialogKey,        // "SaveResultsDlg"
+        ExportDialogTitle,      // u8"결과를 Excel로 저장"
+        ExportFilters,          // "Excel (*.xlsx){.xlsx}"
+        cfg
+    );
 
-    // 다음 프레임에서 display 처리하도록 플래그 설정
-    g_ExportDialogRequested = true;
+    // 다이얼로그 요청 플래그 설정
+    bExportDialogRequested = true;
 }
 
-void ImGuiManager::ExportSearchResultsDrawModal()
+void ImGuiManager::ExportFolderSeleterModalDraw()
 {
-    // 저장 불가 알림 팝업
-    if (ImGui::BeginPopupModal("NoResultsToExport", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (bExportDialogRequested)
     {
-        ImGui::TextUnformatted(u8"내보낼 검색 결과가 없습니다.");
-        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
-        ImGui::EndPopup();
-    }
-
-    // 다이얼로그 표시
-    if (g_ExportDialogRequested &&
-        ImGuiFileDialog::Instance()->Display(kExportDialogKey,
-            ImGuiWindowFlags_NoCollapse, ImVec2(720, 480)))
-    {
-        if (ImGuiFileDialog::Instance()->IsOk())
+        // ----------------------------------- 파일 이름 버퍼 갱신 -----------------------------------
+        const double now = ImGui::GetTime();
+        // beatInterval 간격마다 (현재 0.5초)
+        if (now - s_LastBeat >= beatInterval)
         {
-            // 선택된 경로 획득
-            std::string UserInputPath = ImGuiFileDialog::Instance()->GetFilePathName();
+            // 현재 파일명 가져오기
+            std::string curName = ImGuiFileDialog::Instance()->GetCurrentFileName();
 
-            // 확장자 검사 및 보정 (.xlsx)
-            UserInputPath = EnsureXlsxExtension(std::move(UserInputPath));
+            // 확장자 제거
+            curName = SystemUtils::RemoveFileExtension(curName);
 
-            // 엑셀 파일로 저장
-            const bool ok = SaveSearchResultsToExcel(g_ExportCachedResults, UserInputPath);
+            // 버퍼 갱신
+            ImGuiFileDialog::Instance()->SetFileNameBuffer(curName.c_str());
 
-            // 결과 팝업
-            if (ok)  ImGui::OpenPopup("SaveSuccess");
-            else     ImGui::OpenPopup("SaveFailed");
+            // 타임스탬프 갱신
+            s_LastBeat = now;
         }
 
-        // 다이얼로그 닫기 및 플래그 초기화
-        ImGuiFileDialog::Instance()->Close();
-        g_ExportDialogRequested = false;
-        g_ExportCachedResults.clear();
+        // ----------------------------------- 파일 다이얼로그 표시 및 처리 -----------------------------------
+        const ImGuiWindowFlags ExportFlags = ImGuiWindowFlags_NoCollapse;
+        const ImVec2 ExporSize = ImVec2(720, 480);
+        if (ImGuiFileDialog::Instance()->Display(ExportDialogKey, ExportFlags, ExporSize))
+        {
+            if (ImGuiFileDialog::Instance()->IsOk())
+            {
+                // 확장자 보장
+                std::string userPath = ImGuiFileDialog::Instance()->GetFilePathName();
+                userPath = SystemUtils::EnsureExtension(userPath, ".xlsx");
+
+                // 저장 처리
+                const bool ok = SaveSearchResultsToExcel(ExportCachedResults, userPath);
+
+                // 저장 성공/실패 팝업 오픈
+                ImGui::OpenPopup(ok ? u8"저장 성공" : u8"저장 실패");
+            }
+
+
+            ImGuiFileDialog::Instance()->Close();
+            bExportDialogRequested = false;
+            ExportCachedResults.clear();
+            s_LastBeat = 0.0;
+        }
     }
 
-    // 저장 성공/실패 피드백 팝업
-    if (ImGui::BeginPopupModal("SaveSuccess", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    
+
+    // ----------------------------------- 저장 성공/실패 팝업 -----------------------------------
+    // 팝업 중앙 정렬
+    //if (ImGui::IsPopupOpen(u8"저장 성공") || ImGui::IsPopupOpen(u8"저장 실패"))
+    //{
+    //    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    //    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    //}
+
+    // 저장 성공
+    if (ImGui::BeginPopupModal(u8"저장 성공", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::TextUnformatted(u8"검색 결과가 Excel 파일로 저장되었습니다.");
-        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+        ImGui::TextUnformatted(u8"검색 결과가 엑셀 파일로 저장되었습니다.");
+
+        float fullWidth = ImGui::GetContentRegionAvail().x;
+        if (ImGui::Button(u8"확인", ImVec2(fullWidth, 0))) ImGui::CloseCurrentPopup();
+
         ImGui::EndPopup();
     }
-    if (ImGui::BeginPopupModal("SaveFailed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    // 저장 실패
+    if (ImGui::BeginPopupModal(u8"저장 실패", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextUnformatted(u8"저장 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.");
-        if (ImGui::Button(u8"확인", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+
+        float fullWidth = ImGui::GetContentRegionAvail().x;
+        if (ImGui::Button(u8"확인", ImVec2(fullWidth, 0))) ImGui::CloseCurrentPopup();
+
         ImGui::EndPopup();
     }
 }
@@ -1349,7 +1381,7 @@ bool ImGuiManager::SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>
         // 유저 입력 경로에서 부모 디렉토리 추출
         std::string ParentDir = SystemUtils::GetParentDirectory(UesrInputPath);
         // 임시 엑셀 파일 경로 생성
-        std::string TempFilePath = ParentDir + "\\" + EnsureXlsxExtension(g_ExportDefaultFile);
+        std::string TempFilePath = ParentDir + "\\" + SystemUtils::EnsureExtension(ExportFileName, ".xlsx");
 
 
         // ----------------------------------- 엑셀 파일 생성 -----------------------------------
@@ -1482,10 +1514,10 @@ bool ImGuiManager::SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>
         // 같은 드라이브라면 빠른 rename, 이미 존재하면 덮어쓰기
         if (MoveFileExW(wTemp.c_str(), wFinal.c_str(), MOVEFILE_REPLACE_EXISTING))
         {
-        //    if (bShowDebugLog)
-        //    {
-        //        DebugLog.AddFmt(LogLevel::Info, L"파일 이름 변경 완료: %ls", wFinal.c_str());
-        //    }
+            if (bShowDebugLog)
+            {
+                DebugLog.AddFmt(LogLevel::Info, L"파일 이름 변경 완료: %ls", wFinal.c_str());
+            }
         }
         else
         {
@@ -1508,38 +1540,6 @@ bool ImGuiManager::SaveSearchResultsToExcel(const std::vector<ExcelSearchResult>
         }
 
         return false;
-    }
-}
-
-std::string ImGuiManager::EnsureXlsxExtension(std::string path)
-{
-    try
-    {
-        // UTF-8 문자열을 wide 문자열으로 변환
-        std::wstring wPath = SystemUtils::UTF8ToWString(path);
-
-        // wide 기반으로 확장자 확인/수정
-        std::filesystem::path p(wPath);
-        if (p.extension() != L".xlsx")
-            p.replace_extension(L".xlsx");
-
-        // 다시 UTF-8 문자열으로 반환
-        return SystemUtils::WStringToUTF8(p.wstring());
-    }
-    catch (...)
-    {
-        // 파일명에 한글이 있어도 죽지 않게 예외 흡수
-        // 단순 문자열로 ".xlsx"만 보장
-        std::string safe = path;
-        auto ends_with = [](const std::string& s, const std::string& suf)
-            {
-                return s.size() >= suf.size() &&
-                    std::equal(suf.rbegin(), suf.rend(), s.rbegin(),
-                        [](char a, char b) { return std::tolower(a) == std::tolower(b); });
-            };
-        if (!ends_with(safe, ".xlsx"))
-            safe += ".xlsx";
-        return safe;
     }
 }
 
